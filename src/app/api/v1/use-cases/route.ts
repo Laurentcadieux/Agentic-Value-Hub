@@ -102,6 +102,8 @@ const writeSchema = z.object({
   systems: z.array(z.string()).optional(),
   technologies: z.array(z.string()).optional(),
   automationPotential: z.number().min(0).max(100).nullable().optional(),
+  endToEndAutomationSuccess: z.number().min(0).max(100).nullable().optional(),
+  agenticPercentage: z.number().min(0).max(100).nullable().optional(),
   complexity: z.string().max(60).nullable().optional(),
   risks: z.string().nullable().optional(),
   controls: z.string().nullable().optional(),

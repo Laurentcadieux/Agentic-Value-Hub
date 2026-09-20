@@ -15,6 +15,8 @@ export interface UseCaseCardData {
   agentPattern?: string | null
   automationPattern?: string | null
   automationPotential?: number | null
+  endToEndAutomationSuccess?: number | null
+  agenticPercentage?: number | null
   technologies?: string[] | null
   valueDrivers?: string[] | null
   systems?: string[] | null
@@ -147,21 +149,58 @@ export function UseCaseCard({
           </div>
         )}
 
-        {/* Automation potential bar */}
+        {/* Metrics bars */}
         {useCase.automationPotential != null && (
-          <div className="mt-3">
-            <div className="flex items-center justify-between font-sans text-xs text-neutral-500 dark:text-neutral-400">
-              <span>Automation potential</span>
-              <span className="font-semibold text-neutral-900 dark:text-neutral-100">
-                {potential}%
-              </span>
+          <div className="mt-3 space-y-2">
+            {/* Automation potential */}
+            <div>
+              <div className="flex items-center justify-between font-sans text-xs text-neutral-500 dark:text-neutral-400">
+                <span>Automation potential</span>
+                <span className="font-semibold text-neutral-900 dark:text-neutral-100">
+                  {potential}%
+                </span>
+              </div>
+              <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-neutral-200 dark:bg-neutral-700">
+                <div
+                  className={`h-full ${potentialColor(potential)}`}
+                  style={{ width: `${Math.max(0, Math.min(100, potential))}%` }}
+                />
+              </div>
             </div>
-            <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-neutral-200 dark:bg-neutral-700">
-              <div
-                className={`h-full ${potentialColor(potential)}`}
-                style={{ width: `${Math.max(0, Math.min(100, potential))}%` }}
-              />
-            </div>
+            {/* End-to-end automation success */}
+            {useCase.endToEndAutomationSuccess != null && (
+              <div>
+                <div className="flex items-center justify-between font-sans text-xs text-neutral-500 dark:text-neutral-400">
+                  <span>End-to-end success</span>
+                  <span className="font-semibold text-neutral-900 dark:text-neutral-100">
+                    {useCase.endToEndAutomationSuccess}%
+                  </span>
+                </div>
+                <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-neutral-200 dark:bg-neutral-700">
+                  <div
+                    className="h-full bg-brand-blue"
+                    style={{ width: `${Math.max(0, Math.min(100, useCase.endToEndAutomationSuccess))}%` }}
+                  />
+                </div>
+              </div>
+            )}
+            {/* Agentic % (AI handling unstructured data) */}
+            {useCase.agenticPercentage != null && (
+              <div>
+                <div className="flex items-center justify-between font-sans text-xs text-neutral-500 dark:text-neutral-400">
+                  <span>Agentic (unstructured data)</span>
+                  <span className="font-semibold text-neutral-900 dark:text-neutral-100">
+                    {useCase.agenticPercentage}%
+                  </span>
+                </div>
+                <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-neutral-200 dark:bg-neutral-700">
+                  <div
+                    className="h-full bg-brand-red"
+                    style={{ width: `${Math.max(0, Math.min(100, useCase.agenticPercentage))}%` }}
+                  />
+                </div>
+              </div>
+            )}
           </div>
         )}
 

@@ -79,6 +79,8 @@ export interface UseCaseWriteInput {
   systems?: string[]
   technologies?: string[]
   automationPotential?: number | null
+  endToEndAutomationSuccess?: number | null
+  agenticPercentage?: number | null
   complexity?: string | null
   risks?: string | null
   controls?: string | null
@@ -350,6 +352,8 @@ export const useCaseRepository = {
         systems: data.systems ?? [],
         technologies: data.technologies ?? [],
         automationPotential: data.automationPotential,
+        endToEndAutomationSuccess: data.endToEndAutomationSuccess,
+        agenticPercentage: data.agenticPercentage,
         complexity: data.complexity,
         risks: data.risks,
         controls: data.controls,
@@ -386,6 +390,8 @@ export const useCaseRepository = {
         systems: data.systems,
         technologies: data.technologies,
         automationPotential: data.automationPotential,
+        endToEndAutomationSuccess: data.endToEndAutomationSuccess,
+        agenticPercentage: data.agenticPercentage,
         complexity: data.complexity,
         risks: data.risks,
         controls: data.controls,

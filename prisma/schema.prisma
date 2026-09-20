@@ -159,6 +159,8 @@ model UseCase {
   systems            String[]
   technologies       String[]
   automationPotential Float?
+  endToEndAutomationSuccess Float?
+  agenticPercentage Float?
   complexity         String?
   risks              String?
   controls           String?
