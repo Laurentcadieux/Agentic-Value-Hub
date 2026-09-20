@@ -139,10 +139,20 @@ model UseCase {
   id                 String         @id @default(uuid())
   slug               String         @unique
   title              String
+  subtitle           String?
+  description        String?
+  problem            String?
+  solution           String?
+  conclusion         String?
+  keyTakeaways       String[]
+  imageUrl           String?
+  author             String?
+  readingTimeMinutes Int?
+  ctaLabel           String?
+  ctaUrl             String?
+  isFeatured         Boolean        @default(false)
   industry           String?
   businessFunction   String?
-  problem            String?
-  description        String?
   agentPattern       String?
   automationPattern  String?
   valueDrivers       String[]
@@ -155,8 +165,8 @@ model UseCase {
   sourceRefs         Json?
   status             UseCaseStatus  @default(DRAFT)
   customerId         String?
-  createdAt         DateTime       @default(now())
-  updatedAt         DateTime       @updatedAt
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
 
   customer   Customer?     @relation(fields: [customerId], references: [id], onDelete: SetNull)
   newsUseCases NewsUseCase[]
