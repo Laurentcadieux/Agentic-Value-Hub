@@ -1,14 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { UseCaseStatus } from '@prisma/client'
-import { useCaseService } from '@/services/usecase-service'
+import { useCaseService, toPublicDTO } from '@/services/usecase-service'
 import type { UseCaseOrderBy } from '@/lib/repositories/usecase-repository'
 
 /**
  * /api/v1/use-cases
  *
  * GET  — paginated, faceted, keyword + optional semantic search.
- * POST — create a use case (admin). Gated by optional ADMIN_API_TOKEN bearer.
+ *         Without a bearer token, returns the generic public view (sensitive
+ *         fields stripped). With `Authorization: Bearer NEWS_INGEST_API_KEY`,
+ *         returns the full record set including sensitive fields.
+ * POST — create a use case. Gated by `NEWS_INGEST_API_KEY` bearer token
+ *         (same shared write/ingest token as the news API).
  *
  * NOTE: this route reads from the database at request time, so it is always
  * dynamic (never prerendered at build).
@@ -28,18 +32,20 @@ function toInt(v: string | null, fallback: number): number {
 }
 
 /**
- * Lightweight admin gate. When `ADMIN_API_TOKEN` is set in the environment,
- * writes require `Authorization: Bearer <token>`. When unset, writes are
- * allowed (dev convenience) — Phase 7 adds real role-based admin auth.
+ * Auth gate shared by read (for the full-data branch) and write (POST).
+ * Matches the news-ingest bearer-token pattern: when `NEWS_INGEST_API_KEY`
+ * is set, callers must send `Authorization: Bearer <key>`. When unset, access
+ * is allowed in development mode (same convenience as the news API).
  */
-function adminAllowed(request: NextRequest): boolean {
-  const expected = process.env.ADMIN_API_TOKEN
+function isAuthorized(request: NextRequest): boolean {
+  const expected = process.env.NEWS_INGEST_API_KEY
   if (!expected) return true
   const header = request.headers.get('authorization') ?? ''
   return header === `Bearer ${expected}`
 }
 
 export async function GET(request: NextRequest) {
+  const authorized = isAuthorized(request)
   const sp = request.nextUrl.searchParams
   const status = (sp.get('status') ?? 'PUBLISHED') as (typeof STATUS_VALUES)[number]
   const orderBy = (sp.get('orderBy') ?? 'newest') as UseCaseOrderBy
@@ -60,7 +66,11 @@ export async function GET(request: NextRequest) {
     semantic: parseBool(sp.get('semantic')),
   })
 
-  const body: Record<string, unknown> = { ...result }
+  const items = authorized
+    ? result.items
+    : result.items.map((uc) => toPublicDTO(uc))
+
+  const body: Record<string, unknown> = { ...result, items }
   if (parseBool(sp.get('facets'))) {
     body.facets = await useCaseService.getFacets(
       status === 'ALL' ? 'ALL' : (status as UseCaseStatus),
@@ -72,10 +82,20 @@ export async function GET(request: NextRequest) {
 const writeSchema = z.object({
   slug: z.string().min(1).max(200).optional(),
   title: z.string().min(1).max(300),
+  subtitle: z.string().max(300).nullable().optional(),
+  description: z.string().nullable().optional(),
+  problem: z.string().nullable().optional(),
+  solution: z.string().nullable().optional(),
+  conclusion: z.string().nullable().optional(),
+  keyTakeaways: z.array(z.string()).optional(),
+  imageUrl: z.string().url().nullable().optional(),
+  author: z.string().max(200).nullable().optional(),
+  readingTimeMinutes: z.number().int().min(0).nullable().optional(),
+  ctaLabel: z.string().max(120).nullable().optional(),
+  ctaUrl: z.string().url().nullable().optional(),
+  isFeatured: z.boolean().optional(),
   industry: z.string().max(120).nullable().optional(),
   businessFunction: z.string().max(120).nullable().optional(),
-  problem: z.string().nullable().optional(),
-  description: z.string().nullable().optional(),
   agentPattern: z.string().nullable().optional(),
   automationPattern: z.string().nullable().optional(),
   valueDrivers: z.array(z.string()).optional(),
@@ -89,7 +109,7 @@ const writeSchema = z.object({
 })
 
 export async function POST(request: NextRequest) {
-  if (!adminAllowed(request)) {
+  if (!isAuthorized(request)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 

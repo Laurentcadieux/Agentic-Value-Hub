@@ -1,15 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { UseCaseStatus } from '@prisma/client'
-import { useCaseService } from '@/services/usecase-service'
-import { normalizePotential } from '@/services/usecase-service'
+import { useCaseService, normalizePotential, toPublicDTO } from '@/services/usecase-service'
 
 /**
  * /api/v1/use-cases/[id]
  *
  * GET   — a single use case (by id or slug), including linked news.
- * PATCH — update a use case (admin).
- * DELETE — remove a use case (admin).
+ *         Without a bearer token, returns the generic public view (sensitive
+ *         fields stripped). With `Authorization: Bearer NEWS_INGEST_API_KEY`,
+ *         returns the full record including sensitive fields.
+ * PATCH — update a use case. Gated by `NEWS_INGEST_API_KEY` bearer token.
+ * DELETE — remove a use case. Gated by `NEWS_INGEST_API_KEY` bearer token.
  *
  * Always dynamic: reads/writes the database at request time.
  */
@@ -17,8 +19,13 @@ export const dynamic = 'force-dynamic'
 
 type Params = { params: Promise<{ id: string }> }
 
-function adminAllowed(request: NextRequest): boolean {
-  const expected = process.env.ADMIN_API_TOKEN
+/**
+ * Auth gate matching the news-ingest bearer-token pattern. When
+ * `NEWS_INGEST_API_KEY` is set, callers must send `Authorization: Bearer
+ * <key>`. When unset, access is allowed in development mode.
+ */
+function isAuthorized(request: NextRequest): boolean {
+  const expected = process.env.NEWS_INGEST_API_KEY
   if (!expected) return true
   const header = request.headers.get('authorization') ?? ''
   return header === `Bearer ${expected}`
@@ -31,26 +38,37 @@ async function resolveOne(idOrSlug: string) {
   return useCase
 }
 
-export async function GET(_request: NextRequest, { params }: Params) {
+export async function GET(request: NextRequest, { params }: Params) {
   const { id } = await params
   const useCase = await resolveOne(id)
   if (!useCase) {
     return NextResponse.json({ error: 'Use case not found' }, { status: 404 })
   }
   const { automationPotential, ...rest } = useCase
-  return NextResponse.json({
-    ...rest,
-    automationPotential: normalizePotential(automationPotential),
-  })
+  const normalized = { ...rest, automationPotential: normalizePotential(automationPotential) }
+  if (!isAuthorized(request)) {
+    return NextResponse.json(toPublicDTO(normalized))
+  }
+  return NextResponse.json(normalized)
 }
 
 const patchSchema = z.object({
   slug: z.string().min(1).max(200).optional(),
   title: z.string().min(1).max(300).optional(),
+  subtitle: z.string().max(300).nullable().optional(),
+  description: z.string().nullable().optional(),
+  problem: z.string().nullable().optional(),
+  solution: z.string().nullable().optional(),
+  conclusion: z.string().nullable().optional(),
+  keyTakeaways: z.array(z.string()).optional(),
+  imageUrl: z.string().url().nullable().optional(),
+  author: z.string().max(200).nullable().optional(),
+  readingTimeMinutes: z.number().int().min(0).nullable().optional(),
+  ctaLabel: z.string().max(120).nullable().optional(),
+  ctaUrl: z.string().url().nullable().optional(),
+  isFeatured: z.boolean().optional(),
   industry: z.string().max(120).nullable().optional(),
   businessFunction: z.string().max(120).nullable().optional(),
-  problem: z.string().nullable().optional(),
-  description: z.string().nullable().optional(),
   agentPattern: z.string().nullable().optional(),
   automationPattern: z.string().nullable().optional(),
   valueDrivers: z.array(z.string()).optional(),
@@ -64,7 +82,7 @@ const patchSchema = z.object({
 })
 
 export async function PATCH(request: NextRequest, { params }: Params) {
-  if (!adminAllowed(request)) {
+  if (!isAuthorized(request)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
   const { id } = await params
@@ -100,7 +118,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
 }
 
 export async function DELETE(request: NextRequest, { params }: Params) {
-  if (!adminAllowed(request)) {
+  if (!isAuthorized(request)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
   const { id } = await params

@@ -2,13 +2,11 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { UseCaseCard, type UseCaseCardData } from '@/components/UseCaseCard'
-import { demoUseCases } from '@/lib/demo-data'
 
 /**
  * Interactive use-case explorer: keyword + semantic search, faceted filters
- * and pagination, backed by /api/v1/use-cases. Falls back to the Phase 1 demo
- * data (filtered client-side) when the API is unavailable, so the page is
- * never empty.
+ * and pagination, backed by /api/v1/use-cases. Shows an empty state when the
+ * API is unavailable or returns no results.
  */
 
 interface Facets {
@@ -42,47 +40,6 @@ const EMPTY_FACETS: Facets = {
   valueDrivers: [],
 }
 
-/** Client-side facets + filtering for the demo-data fallback. */
-function demoFacets(): Facets {
-  const uniq = (arr: string[]) => Array.from(new Set(arr.filter(Boolean))).sort()
-  return {
-    industries: uniq(demoUseCases.map((u) => u.industry)),
-    businessFunctions: uniq(demoUseCases.map((u) => u.businessFunction)),
-    technologies: uniq(demoUseCases.flatMap((u) => u.technologies)),
-    agentPatterns: uniq(demoUseCases.map((u) => u.agentPattern)),
-    automationPatterns: uniq(demoUseCases.map((u) => u.automationPattern)),
-    complexities: uniq(demoUseCases.map((u) => u.complexity)),
-    valueDrivers: uniq(demoUseCases.flatMap((u) => u.valueDrivers)),
-  }
-}
-
-function filterDemo(filters: Filters, q: string, page: number, pageSize: number): SearchResult {
-  const tokens = q.trim().split(/\s+/).filter(Boolean)
-  let items = demoUseCases.filter((u) => {
-    if (filters.industry && u.industry !== filters.industry) return false
-    if (filters.businessFunction && u.businessFunction !== filters.businessFunction) return false
-    if (filters.technology && !u.technologies.includes(filters.technology)) return false
-    if (filters.agentPattern && u.agentPattern !== filters.agentPattern) return false
-    if (filters.automationPattern && u.automationPattern !== filters.automationPattern) return false
-    if (filters.complexity && u.complexity !== filters.complexity) return false
-    if (filters.valueDriver && !u.valueDrivers.includes(filters.valueDriver)) return false
-    if (tokens.length) {
-      const hay = [
-        u.title, u.description, u.problem, u.industry, u.businessFunction,
-        u.agentPattern, u.automationPattern, u.complexity, u.risks, u.controls,
-        ...u.technologies, ...u.valueDrivers, ...u.systems,
-      ].join(' ').toLowerCase()
-      if (!tokens.every((t) => hay.includes(t.toLowerCase()))) return false
-    }
-    return true
-  })
-  const total = items.length
-  const totalPages = Math.max(1, Math.ceil(total / pageSize))
-  const start = (page - 1) * pageSize
-  items = items.slice(start, start + pageSize)
-  return { items, total, page, pageSize, totalPages, semantic: false, facets: demoFacets() }
-}
-
 interface Filters {
   industry: string
   businessFunction: string
@@ -101,6 +58,16 @@ const EMPTY_FILTERS: Filters = {
   automationPattern: '',
   complexity: '',
   valueDriver: '',
+}
+
+const EMPTY_RESULT: SearchResult = {
+  items: [],
+  total: 0,
+  page: 1,
+  pageSize: 12,
+  totalPages: 1,
+  semantic: false,
+  facets: EMPTY_FACETS,
 }
 
 const PAGE_SIZE = 12
@@ -156,9 +123,9 @@ export function UseCasesExplorer() {
         }
       })
       .catch(() => {
-        // Fallback to demo data so the page is never empty.
+        // API unavailable — show empty state instead of demo data.
         if (!cancelled) {
-          setData(filterDemo(filters, debouncedQ, page, PAGE_SIZE))
+          setData({ ...EMPTY_RESULT, page, pageSize: PAGE_SIZE })
           setLoading(false)
         }
       })

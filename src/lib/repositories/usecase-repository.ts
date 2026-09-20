@@ -59,10 +59,20 @@ export interface UseCaseFacets {
 export interface UseCaseWriteInput {
   slug?: string
   title: string
+  subtitle?: string | null
+  description?: string | null
+  problem?: string | null
+  solution?: string | null
+  conclusion?: string | null
+  keyTakeaways?: string[]
+  imageUrl?: string | null
+  author?: string | null
+  readingTimeMinutes?: number | null
+  ctaLabel?: string | null
+  ctaUrl?: string | null
+  isFeatured?: boolean
   industry?: string | null
   businessFunction?: string | null
-  problem?: string | null
-  description?: string | null
   agentPattern?: string | null
   automationPattern?: string | null
   valueDrivers?: string[]
@@ -320,10 +330,20 @@ export const useCaseRepository = {
       data: {
         slug: data.slug?.trim() || slugify(data.title),
         title: data.title,
+        subtitle: data.subtitle,
+        description: data.description,
+        problem: data.problem,
+        solution: data.solution,
+        conclusion: data.conclusion,
+        keyTakeaways: data.keyTakeaways ?? [],
+        imageUrl: data.imageUrl,
+        author: data.author,
+        readingTimeMinutes: data.readingTimeMinutes,
+        ctaLabel: data.ctaLabel,
+        ctaUrl: data.ctaUrl,
+        isFeatured: data.isFeatured ?? false,
         industry: data.industry,
         businessFunction: data.businessFunction,
-        problem: data.problem,
-        description: data.description,
         agentPattern: data.agentPattern,
         automationPattern: data.automationPattern,
         valueDrivers: data.valueDrivers ?? [],
@@ -346,10 +366,20 @@ export const useCaseRepository = {
       data: {
         slug: data.slug,
         title: data.title,
+        subtitle: data.subtitle,
+        description: data.description,
+        problem: data.problem,
+        solution: data.solution,
+        conclusion: data.conclusion,
+        keyTakeaways: data.keyTakeaways,
+        imageUrl: data.imageUrl,
+        author: data.author,
+        readingTimeMinutes: data.readingTimeMinutes,
+        ctaLabel: data.ctaLabel,
+        ctaUrl: data.ctaUrl,
+        isFeatured: data.isFeatured,
         industry: data.industry,
         businessFunction: data.businessFunction,
-        problem: data.problem,
-        description: data.description,
         agentPattern: data.agentPattern,
         automationPattern: data.automationPattern,
         valueDrivers: data.valueDrivers,

@@ -63,6 +63,37 @@ function toDTO(uc: UseCase): UseCaseDTO {
   return { ...rest, automationPotential: normalizePotential(automationPotential) }
 }
 
+/**
+ * Public-facing DTO: keeps the generic / presentation fields a public viewer may
+ * see, and strips customer-specific or sensitive operational fields
+ * (`risks`, `controls`, `systems`, `sourceRefs`, `customerId`).
+ *
+ * Accepts either a raw `UseCase` or an already-normalized `UseCaseDTO` /
+ * `UseCaseWithNews` (the linked `newsUseCases` relation is dropped too, since
+ * it is not part of the generic public view).
+ */
+export type PublicUseCaseDTO = Omit<
+  UseCaseDTO,
+  'risks' | 'controls' | 'systems' | 'sourceRefs' | 'customerId' | 'newsUseCases'
+>
+
+export function toPublicDTO<T extends { automationPotential: number | null }>(
+  useCase: T,
+): PublicUseCaseDTO {
+  // `risks`, `controls`, `systems`, `sourceRefs`, `customerId` and any
+  // `newsUseCases` relation are stripped; everything else is public.
+  const {
+    risks: _risks,
+    controls: _controls,
+    systems: _systems,
+    sourceRefs: _sourceRefs,
+    customerId: _customerId,
+    newsUseCases: _newsUseCases,
+    ...rest
+  } = useCase as unknown as UseCase & { newsUseCases?: unknown }
+  return rest as PublicUseCaseDTO
+}
+
 /** Build the text blob used to embed a use case for semantic similarity. */
 export function buildUseCaseText(uc: Pick<
   UseCase,
