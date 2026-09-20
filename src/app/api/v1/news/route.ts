@@ -1,53 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { z } from 'zod'
+import { randomUUID } from 'node:crypto'
+import { newsIngestSchema, ingestNews } from '@/services/news-service'
+import { findNews } from '@/lib/repositories/news-repository'
 
 /**
- * POST /api/v1/news
- * Ingest a news item. Requires Bearer token == NEWS_INGEST_API_KEY.
+ * POST /api/v1/news — ingest a news item.
  *
- * Phase 0: validates payload and auth, returns a synthetic success body.
- * The actual Prisma write is stubbed and will be wired in a later phase.
+ * Bearer-token auth (NEWS_INGEST_API_KEY) → Zod validation → canonical URL
+ * normalization → content sanitization → content-hash fingerprint → duplicate
+ * detection → persist → IngestionEvent audit. See src/services/news-service.ts.
  */
-
-const newsIngestSchema = z.object({
-  slug: z.string().min(1),
-  headline: z.string().min(1),
-  summary: z.string().optional(),
-  analysis: z.string().optional(),
-  whyItMatters: z.string().optional(),
-  sourceName: z.string().optional(),
-  sourceUrl: z.string().url().optional(),
-  canonicalUrl: z.string().url().optional(),
-  publishedAt: z.string().datetime().optional(),
-  imageUrl: z.string().url().optional(),
-  categories: z.array(z.string()).default([]),
-  tags: z.array(z.string()).default([]),
-  companies: z.array(z.string()).default([]),
-  industries: z.array(z.string()).default([]),
-  businessFunctions: z.array(z.string()).default([]),
-  technologies: z.array(z.string()).default([]),
-  contentHash: z.string().optional(),
-})
-
-function randomUuid(): string {
-  // Lightweight RFC4122 v4 UUID without pulling in the uuid package.
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
-    const r = (Math.random() * 16) | 0
-    const v = c === 'x' ? r : (r & 0x3) | 0x8
-    return v.toString(16)
-  })
-}
-
 export async function POST(request: NextRequest) {
   // --- Bearer auth ---
   const authHeader = request.headers.get('authorization') ?? ''
   const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : ''
   const expected = process.env.NEWS_INGEST_API_KEY ?? ''
   if (!expected || token !== expected) {
-    return NextResponse.json(
-      { error: 'Unauthorized' },
-      { status: 401 },
-    )
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
   // --- Body validation ---
@@ -66,15 +35,56 @@ export async function POST(request: NextRequest) {
     )
   }
 
-  const _validated = parsed.data
+  const requestId = request.headers.get('x-request-id') ?? randomUUID()
+  const result = await ingestNews(parsed.data, { source: 'api', requestId })
 
-  // TODO(Phase 1): persist via prisma.news.create({ data: _validated }) inside
-  // a transaction that also writes an IngestionEvent row. For Phase 0 we return
-  // a synthetic success payload so the ingest contract is testable end-to-end.
-  const newsId = randomUuid()
+  if (result.success) {
+    return NextResponse.json(
+      { success: true, news_id: result.newsId, status: 'published' },
+      { status: 201 },
+    )
+  }
+
+  if (result.status === 'duplicate') {
+    return NextResponse.json(
+      {
+        success: false,
+        status: 'duplicate',
+        error: result.error,
+        news_id: result.newsId,
+      },
+      { status: 409 },
+    )
+  }
 
   return NextResponse.json(
-    { success: true, news_id: newsId, status: 'published' },
-    { status: 201 },
+    { success: false, status: 'error', error: result.error },
+    { status: 500 },
   )
+}
+
+/**
+ * GET /api/v1/news — list news with pagination and filtering.
+ *
+ * Query params: limit, offset, category, tag, company, industry, technology,
+ * status, q (text search across headline + summary).
+ */
+export async function GET(request: NextRequest) {
+  const params = request.nextUrl.searchParams
+  const limitParam = params.get('limit')
+  const offsetParam = params.get('offset')
+
+  const result = await findNews({
+    limit: limitParam != null ? Number(limitParam) : undefined,
+    offset: offsetParam != null ? Number(offsetParam) : undefined,
+    category: params.get('category') ?? undefined,
+    tag: params.get('tag') ?? undefined,
+    company: params.get('company') ?? undefined,
+    industry: params.get('industry') ?? undefined,
+    technology: params.get('technology') ?? undefined,
+    status: params.get('status') ?? undefined,
+    q: params.get('q') ?? undefined,
+  })
+
+  return NextResponse.json(result)
 }

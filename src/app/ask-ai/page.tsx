@@ -1,39 +1,42 @@
 import type { Metadata } from 'next'
-import Link from 'next/link'
-import { PageHeader } from '@/components/PageHeader'
+import { AdvisorChat } from '@/components/chat/AdvisorChat'
+import { DEMO_CUSTOMER_ID } from '@/lib/config'
 
 export const metadata: Metadata = {
   title: 'Ask the AI Advisor',
   description:
-    'Describe a process, problem or opportunity and the AI Advisor helps you turn it into a quantified business case.',
+    'Describe a process, problem or opportunity and the AI Advisor helps you turn it into a quantified business case. Choose LEARN, EXPLORE, IDEATE or ASSESS mode.',
   alternates: { canonical: '/ask-ai' },
+  robots: { index: false, follow: true },
 }
 
+/**
+ * /ask-ai — full-page AI Advisor (Phase 4).
+ *
+ * Not a floating chatbot: the Advisor owns the page. A sidebar lists past
+ * conversations, a mode selector switches between LEARN / EXPLORE / IDEATE /
+ * ASSESS, and the chat panel walks every conversation through a structured
+ * discovery state machine that culminates in an opportunity card saved to the
+ * Idea Lab.
+ *
+ * Customer scoping: the customer id is sourced from configuration here (auth is
+ * wired in a later phase) and propagated to every API call, where the server
+ * enforces row-level scoping.
+ */
 export default function AskAiPage() {
   return (
-    <>
-      <PageHeader
-        kicker="Tools"
-        title="Ask the AI Advisor"
-        description="Tell the Advisor what you want to automate. It helps you frame the opportunity, find relevant use cases and estimate the value."
-      />
-      <div className="mx-auto max-w-3xl px-4 py-10 sm:px-6 lg:px-8">
-        <div className="rounded border border-dashed border-neutral-300 p-8 text-center dark:border-neutral-700">
-          <span className="rounded bg-amber-100 px-2 py-0.5 text-xs font-bold text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">
-            PLACEHOLDER
-          </span>
-          <p className="mt-4 text-neutral-600 dark:text-neutral-300">
-            The interactive AI Advisor lands in a later phase. For now, capture
-            your idea in the Idea Lab and we will work it into a business case.
+    <section className="flex flex-col">
+      <header className="border-b border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-950">
+        <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8">
+          <p className="font-sans text-xs font-bold uppercase tracking-[0.2em] text-brand-red">
+            Tools
           </p>
-          <Link
-            href="/idea-lab"
-            className="mt-6 inline-flex items-center justify-center rounded bg-brand-red px-6 py-3 text-sm font-semibold text-white transition hover:bg-red-700"
-          >
-            Go to the Idea Lab &rarr;
-          </Link>
+          <h1 className="mt-1 font-headline text-2xl font-bold leading-tight sm:text-3xl">
+            AI Advisor
+          </h1>
         </div>
-      </div>
-    </>
+      </header>
+      <AdvisorChat customerId={DEMO_CUSTOMER_ID} />
+    </section>
   )
 }

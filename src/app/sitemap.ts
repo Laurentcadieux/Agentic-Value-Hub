@@ -23,6 +23,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: '/idea-lab', priority: 0.7, changeFrequency: 'monthly' },
     { path: '/about', priority: 0.6, changeFrequency: 'monthly' },
     { path: '/methodology', priority: 0.6, changeFrequency: 'monthly' },
+    { path: '/privacy', priority: 0.3, changeFrequency: 'yearly' },
+    { path: '/terms', priority: 0.3, changeFrequency: 'yearly' },
   ]
 
   const staticEntries: MetadataRoute.Sitemap = staticRoutes.map((r) => ({

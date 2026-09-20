@@ -23,6 +23,13 @@ const footerSections: { title: string; links: { label: string; href: string }[] 
     title: 'About',
     links: [{ label: 'About the Hub', href: '/about' }],
   },
+  {
+    title: 'Legal',
+    links: [
+      { label: 'Privacy Policy', href: '/privacy' },
+      { label: 'Terms of Service', href: '/terms' },
+    ],
+  },
 ]
 
 export function Footer() {

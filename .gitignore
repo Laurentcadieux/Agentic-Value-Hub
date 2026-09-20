@@ -22,3 +22,6 @@ backend/dist/
 frontend/dist/
 .next/
 tsconfig.tsbuildinfo
+
+# Local auth credential store (file-backed password hashes; Phase 6)
+.data/

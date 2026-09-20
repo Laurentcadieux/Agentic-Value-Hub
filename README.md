@@ -1,74 +1,98 @@
 # Agentic Value Hub
 
-Full-stack web application with React frontend, Node.js backend, and PostgreSQL database.
+Full-stack web application built with Next.js 15 (App Router), React 19,
+TypeScript, Tailwind CSS 4, Prisma 6, and PostgreSQL. It tracks the agentic
+AI market, catalogs enterprise use cases, and helps teams turn opportunities
+into quantified business cases.
 
 ## Architecture
 
 ```
-Internet → DO Nginx (shared edge, SSL) → WireGuard VPN → Proxmox VMs
-                                                         ├── app-avh  (Node.js API)
-                                                         └── db-avh   (PostgreSQL)
+Internet → DO Nginx (shared edge, TLS) → WireGuard VPN → Proxmox VMs
+                                                       ├── app-avh  (Next.js standalone + PM2)
+                                                       └── db-avh   (PostgreSQL 16)
 ```
 
-## Server Types
+| Layer | Host | Tech | Port |
+|------|------|------|------|
+| TLS termination, static + /api proxy | DigitalOcean (shared) | Nginx | 443 |
+| Next.js standalone server | Proxmox hyper101 (app-avh) | Node.js 20 + PM2 | 127.0.0.1:3000 |
+| Database | Proxmox hyper101 (db-avh) | PostgreSQL 16 + pgvector | 5432 (VPN only) |
 
-| Server | Role | Location | Tech | Port |
-|--------|------|----------|------|------|
-| Web (shared) | SSL termination, serve React build, proxy /api | DigitalOcean | Nginx | 443 |
-| App | Node.js backend API | Proxmox hyper101 | Node.js 20 + Express | 3000 |
-| Database | PostgreSQL | Proxmox hyper101 | PostgreSQL 16 | 5432 |
-
-## Repository Structure
+## Repository structure
 
 ```
 Agentic-Value-Hub/
-├── frontend/              # React app (Vite + TypeScript)
-│   ├── src/
-│   ├── public/
-│   ├── package.json
-│   └── vite.config.ts
-├── backend/               # Node.js API server
-│   ├── src/
-│   ├── package.json
-│   └── .env.example
-├── database/              # PostgreSQL schema and migrations
-│   ├── migrations/
-│   └── seed/
-├── deploy/               # Deployment configurations
-│   ├── docker-compose.yml
-│   ├── nginx-app.conf
-│   └── .env.example
-├── docs/                 # Architecture and dependency documentation
-│   ├── ARCHITECTURE.md
-│   ├── DEPENDENCIES.md
-│   └── DEPLOYMENT.md
-├── .gitignore
-└── README.md
+├── src/
+│   ├── app/                # App Router pages + API routes
+│   ├── components/         # React components
+│   ├── lib/                # env, prisma, seo, rate-limit, ai, value
+│   ├── repositories/       # data access layer
+│   └── services/          # business logic layer
+├── prisma/                 # schema.prisma, migrations, seed
+├── deploy/
+│   ├── avh-nginx.conf      # Nginx config for the standalone server
+│   └── ecosystem.config.cjs  # PM2 process config
+├── docs/
+│   ├── PRODUCTION.md       # production guide (DB, backups, monitoring)
+│   ├── SECURITY.md        # security checklist, headers, rate limiting
+│   └── DEPLOYMENT.md      # step-by-step deploy via My_Hybrid_infra
+├── next.config.ts          # standalone output + security headers
+├── src/middleware.ts       # /api rate limiting
+└── .env.example           # all environment variables documented
 ```
-
-## Dependencies
-
-See [docs/DEPENDENCIES.md](docs/DEPENDENCIES.md) for the full dependency graph.
-
-## Deployment
-
-Deployment is managed by the [My_Hybrid_infra](https://github.com/Laurentcadieux/My_Hybrid_infra) repo:
-
-1. **Terraform** creates the Proxmox VMs (app + database)
-2. **Ansible** installs Node.js, PostgreSQL, deploys the code
-3. **DO Nginx** (shared) serves the React build and proxies /api to the app VM
-
-See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for detailed deployment instructions.
 
 ## Development
 
 ```bash
-# Frontend
-cd frontend && npm install && npm run dev
-
-# Backend
-cd backend && npm install && npm run dev
-
-# Database (requires local PostgreSQL or Docker)
-cd database && psql -U postgres -f migrations/001_init.sql
+npm install
+cp .env.example .env        # fill in DATABASE_URL and secrets
+npx prisma migrate dev
+npm run dev                 # http://localhost:3000
 ```
+
+Scripts: `npm run dev` · `npm run build` · `npm start` · `npm run lint` ·
+`npm run typecheck` · `npm test` (Vitest).
+
+## Production deployment
+
+The Hub is deployed to Proxmox VMs provisioned by the
+[`My_Hybrid_infra`](https://github.com/Laurentcadieux/My_Hybrid_infra) repo
+(Terraform → VMs, Ansible → install/configure), fronted by a shared
+DigitalOcean Nginx edge.
+
+- **Step-by-step deploy:** [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md)
+- **Production operations (PostgreSQL, backups, monitoring, performance,
+  accessibility):** [`docs/PRODUCTION.md`](docs/PRODUCTION.md)
+- **Security (headers, rate limiting, secrets, incident
+  response):** [`docs/SECURITY.md`](docs/SECURITY.md)
+
+Quick summary:
+
+1. Build the standalone artifact: `npm ci && npx prisma generate && npm run build`
+   → `.next/standalone/server.js`.
+2. Provision `app-avh` + `db-avh` via `My_Hybrid_infra` Terraform/Ansible.
+3. Run `prisma migrate deploy` against the prod DB over the WireGuard VPN.
+4. Ship the artifact to `/opt/agentic-value-hub` on `app-avh`; supply secrets
+   via a `600`-mode `EnvironmentFile` (no `NEXT_PUBLIC_` secrets).
+5. `pm2 start deploy/ecosystem.config.cjs --env production` (binds to
+   `127.0.0.1:3000`).
+6. Install `deploy/avh-nginx.conf`, run certbot, reload Nginx.
+7. Point Uptime Kuma at `/api/health`; enable daily `pg_dump` backups.
+
+The pre-release gate is:
+
+```bash
+npx tsc --noEmit && npx next lint && npx next build
+```
+
+All three must pass clean with `output: 'standalone'` enabled
+(`next.config.ts`).
+
+## Legal pages
+
+- [Privacy Policy](https://agenticvaluehub.com/privacy)
+- [Terms of Service](https://agenticvaluehub.com/terms)
+
+> The legal pages are production-quality templates. Have counsel review them
+> before live use.
