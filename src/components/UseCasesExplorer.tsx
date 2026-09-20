@@ -215,7 +215,7 @@ export function UseCasesExplorer() {
             {data?.total ?? 0} use case{(data?.total ?? 0) === 1 ? '' : 's'}
             {data?.semantic ? ' · semantic ranking' : ''}
           </p>
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
             {items.map((useCase) => (
               <UseCaseCard key={useCase.slug} useCase={useCase} />
             ))}
