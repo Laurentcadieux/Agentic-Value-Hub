@@ -186,8 +186,6 @@ export default async function NewsArticlePage({ params }: Params) {
   if (!item) notFound()
 
   const relatedUseCases = demoUseCases
-    .filter((u) => u.industry === item.industries[0] || u.technologies.some((t) => item.technologies.includes(t)))
-    .slice(0, 3)
 
   return (
     <article>

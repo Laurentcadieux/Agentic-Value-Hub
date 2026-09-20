@@ -16,8 +16,8 @@ export function HeroSection({
 }: {
   tagline: string
   subheading: string
-  lead: DemoNewsItem
-  secondary: DemoNewsItem[]
+  lead?: DemoNewsItem
+  secondary?: DemoNewsItem[]
 }) {
   return (
     <section className="border-b border-neutral-200 dark:border-neutral-800">
@@ -52,14 +52,14 @@ export function HeroSection({
         {/* Featured stories */}
         <div className="mt-12 grid grid-cols-1 gap-8 lg:grid-cols-3">
           <div className="lg:col-span-2">
-            <NewsCard item={lead} variant="featured" />
+            <NewsCard item={lead!} variant="featured" />
           </div>
           <aside className="lg:border-l lg:border-neutral-200 lg:pl-8 dark:lg:border-neutral-800">
             <p className="mb-4 border-b-2 border-neutral-900 pb-2 font-sans text-xs font-bold uppercase tracking-wider dark:border-neutral-100">
               Also today
             </p>
             <div className="space-y-6">
-              {secondary.map((item) => (
+              {(secondary ?? []).map((item) => (
                 <NewsCard key={item.slug} item={item} variant="horizontal" />
               ))}
             </div>

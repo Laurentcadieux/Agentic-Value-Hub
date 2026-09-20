@@ -57,7 +57,19 @@ export default async function NewsPage() {
   }
 
   if (!useDb) {
-    news = getNewsSortedByDate()
+    // No database articles — show empty state
+    return (
+      <>
+        <PageHeader
+          kicker="Agentic Intelligence"
+          title="News & Analysis"
+          description="Track what is happening in agentic automation — product launches, research breakthroughs, and enterprise case studies, with analysis on why each matters."
+        />
+        <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+          <p className="py-20 text-center text-neutral-500">No news articles published yet.</p>
+        </div>
+      </>
+    )
   }
 
   const lead = news[0]
