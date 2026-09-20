@@ -50,6 +50,7 @@ export function HeroSection({
         </div>
 
         {/* Featured stories */}
+        {lead ? (
         <div className="mt-12 grid grid-cols-1 gap-8 lg:grid-cols-3">
           <div className="lg:col-span-2">
             <NewsCard item={lead!} variant="featured" />
@@ -65,6 +66,7 @@ export function HeroSection({
             </div>
           </aside>
         </div>
+        ) : null}
       </div>
     </section>
   )
