@@ -70,9 +70,11 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
   // Build update data — only allow known fields
   const updateData: Record<string, unknown> = {}
   const allowedFields = [
-    'headline', 'summary', 'analysis', 'whyItMatters', 'sourceName',
-    'sourceUrl', 'imageUrl', 'categories', 'tags', 'companies',
-    'industries', 'businessFunctions', 'technologies', 'status',
+    'headline', 'subtitle', 'summary', 'analysis', 'whyItMatters',
+    'conclusion', 'keyTakeaways', 'pullQuotes', 'author',
+    'readingTimeMinutes', 'ctaLabel', 'ctaUrl', 'isFeatured',
+    'sourceName', 'sourceUrl', 'imageUrl', 'categories', 'tags',
+    'companies', 'industries', 'businessFunctions', 'technologies', 'status',
   ]
 
   if (typeof body === 'object' && body !== null) {

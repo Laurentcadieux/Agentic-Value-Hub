@@ -14,8 +14,7 @@ type Params = { params: Promise<{ slug: string }> }
 
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { slug } = await params
-  
-  // Try database
+
   try {
     const article = await prisma.news.findUnique({ where: { slug } })
     if (article) {
@@ -34,7 +33,6 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
     }
   } catch {}
 
-  // Fall back to demo
   const item = getNewsBySlug(slug)
   if (!item) return { title: 'Article not found' }
   return {
@@ -60,23 +58,7 @@ function formatDate(date: Date | string | null): string {
 export default async function NewsArticlePage({ params }: Params) {
   const { slug } = await params
 
-  // Try database first
-  let article: {
-    id: string
-    headline: string
-    summary: string | null
-    analysis: string | null
-    whyItMatters: string | null
-    sourceName: string | null
-    sourceUrl: string | null
-    publishedAt: Date | null
-    imageUrl: string | null
-    categories: string[]
-    tags: string[]
-    companies: string[]
-    industries: string[]
-    technologies: string[]
-  } | null = null
+  let article: any = null
 
   try {
     article = await prisma.news.findUnique({ where: { slug } })
@@ -92,9 +74,9 @@ export default async function NewsArticlePage({ params }: Params) {
             </Link>
           </nav>
 
-          {article.categories.length > 0 && (
+          {article.categories?.length > 0 && (
             <div className="flex flex-wrap items-center gap-2">
-              {article.categories.map((category) => (
+              {article.categories.map((category: string) => (
                 <CategoryBadge key={category} category={category} />
               ))}
             </div>
@@ -103,15 +85,29 @@ export default async function NewsArticlePage({ params }: Params) {
           <h1 className="mt-3 font-headline text-3xl font-bold leading-tight sm:text-4xl md:text-5xl">
             {article.headline}
           </h1>
+
+          {/* Subtitle / deck */}
+          {article.subtitle && (
+            <p className="mt-3 text-xl font-medium text-neutral-700 dark:text-neutral-300">
+              {article.subtitle}
+            </p>
+          )}
+
           {article.summary && (
             <p className="mt-4 text-lg text-neutral-600 dark:text-neutral-300">
               {article.summary}
             </p>
           )}
 
-          <div className="mt-5 flex flex-wrap items-center gap-x-2 gap-y-1 border-y border-neutral-200 py-3 font-sans text-xs text-neutral-500 dark:border-neutral-800 dark:text-neutral-400">
-            {article.sourceName && (
+          {/* Byline */}
+          <div className="mt-5 flex flex-wrap items-center gap-x-3 gap-y-1 border-y border-neutral-200 py-3 font-sans text-xs text-neutral-500 dark:border-neutral-800 dark:text-neutral-400">
+            {article.author && (
               <span className="font-semibold text-neutral-900 dark:text-neutral-100">
+                {article.author}
+              </span>
+            )}
+            {article.sourceName && (
+              <span className={article.author ? '' : 'font-semibold text-neutral-900 dark:text-neutral-100'}>
                 {article.sourceName}
               </span>
             )}
@@ -123,15 +119,27 @@ export default async function NewsArticlePage({ params }: Params) {
                 </time>
               </>
             )}
-            {article.companies.length > 0 && (
+            {article.readingTimeMinutes && (
+              <>
+                <span aria-hidden="true">&middot;</span>
+                <span>{article.readingTimeMinutes} min read</span>
+              </>
+            )}
+            {article.companies?.length > 0 && (
               <>
                 <span aria-hidden="true">&middot;</span>
                 <span>{article.companies.join(', ')}</span>
               </>
             )}
+            {article.isFeatured && (
+              <span className="ml-auto rounded bg-brand-red/10 px-2 py-0.5 font-bold text-brand-red">
+                ★ Featured
+              </span>
+            )}
           </div>
         </div>
 
+        {/* Hero image */}
         {article.imageUrl && (
           <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
             <img
@@ -142,6 +150,30 @@ export default async function NewsArticlePage({ params }: Params) {
           </div>
         )}
 
+        {/* Key takeaways */}
+        {article.keyTakeaways?.length > 0 && (
+          <div className="mx-auto mt-8 max-w-3xl px-4 sm:px-6 lg:px-8">
+            <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-6 dark:border-neutral-800 dark:bg-neutral-900">
+              <h2 className="mb-4 font-headline text-sm font-bold uppercase tracking-wider text-brand-red">
+                Key Takeaways
+              </h2>
+              <ul className="space-y-3">
+                {article.keyTakeaways.map((takeaway: string, i: number) => (
+                  <li key={i} className="flex gap-3">
+                    <span className="mt-1 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-brand-red text-xs font-bold text-white">
+                      {i + 1}
+                    </span>
+                    <span className="text-sm font-medium text-neutral-800 dark:text-neutral-200">
+                      {takeaway}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        )}
+
+        {/* Body content */}
         <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 lg:px-8">
           <div className="prose-editorial">
             {article.analysis && (
@@ -150,17 +182,39 @@ export default async function NewsArticlePage({ params }: Params) {
                 <p>{article.analysis}</p>
               </>
             )}
+
+            {/* Pull quotes */}
+            {article.pullQuotes?.length > 0 && (
+              <div className="my-8 space-y-6">
+                {article.pullQuotes.map((quote: string, i: number) => (
+                  <blockquote key={i} className="border-l-4 border-brand-red pl-6">
+                    <p className="font-headline text-xl font-medium italic text-neutral-800 dark:text-neutral-200">
+                      &ldquo;{quote}&rdquo;
+                    </p>
+                  </blockquote>
+                ))}
+              </div>
+            )}
+
             {article.whyItMatters && (
               <>
                 <h2 className="mt-8 font-headline text-xl font-bold">Why it matters</h2>
                 <p>{article.whyItMatters}</p>
               </>
             )}
+
+            {article.conclusion && (
+              <>
+                <h2 className="mt-8 font-headline text-xl font-bold">Bottom line</h2>
+                <p>{article.conclusion}</p>
+              </>
+            )}
           </div>
 
-          {article.tags.length > 0 && (
+          {/* Tags */}
+          {article.tags?.length > 0 && (
             <div className="mt-8 flex flex-wrap gap-2">
-              {article.tags.map((tag) => (
+              {article.tags.map((tag: string) => (
                 <span key={tag} className="rounded bg-neutral-100 px-2 py-1 font-sans text-xs text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400">
                   #{tag}
                 </span>
@@ -168,6 +222,20 @@ export default async function NewsArticlePage({ params }: Params) {
             </div>
           )}
 
+          {/* CTA */}
+          {article.ctaLabel && article.ctaUrl && (
+            <div className="mt-8 border-t border-neutral-200 pt-6 dark:border-neutral-800">
+              <Link
+                href={article.ctaUrl}
+                className="inline-flex items-center gap-2 rounded-lg bg-neutral-900 px-6 py-3 font-sans text-sm font-semibold text-white transition hover:bg-brand-red dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-brand-red dark:hover:text-white"
+              >
+                {article.ctaLabel}
+                <span aria-hidden="true">&rarr;</span>
+              </Link>
+            </div>
+          )}
+
+          {/* Source link */}
           {article.sourceUrl && (
             <p className="mt-6 font-sans text-xs text-neutral-500 dark:text-neutral-400">
               Source:{' '}
