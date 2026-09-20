@@ -1,35 +1,4 @@
-# News API — Complete Integration Guide
-
-This document describes the News ingestion API, how data flows from external agents (like the [Journalist pipeline](https://github.com/Laurentcadieux/Agentic-Value-Hub-journalist)) into the database, and where each field lands in PostgreSQL.
-
----
-
-## Architecture
-
-```
-Journalist Agents (15 agents)
-  │  RSS feeds, YouTube channels, web scraping
-  │  AI summarization + image generation
-  │
-  ▼
-POST /api/v1/news (Bearer auth)
-  │
-  ├── Validate schema (Zod)
-  ├── Normalize canonical URL
-  ├── Calculate content hash (SHA-256)
-  ├── Check duplicates (hash + canonical URL)
-  ├── Sanitize content (strip HTML, cap lengths)
-  ├── Create IngestionEvent (audit log)
-  └── Create News record
-         │
-         ▼
-PostgreSQL (192.168.0.111:5432)
-  ├── news table           ← article data
-  ├── ingestion_events     ← audit trail
-  └── news_use_cases       ← links to knowledge base
-```
-
----
+# News API — Complete CRUD Reference
 
 ## Base URL
 
@@ -40,89 +9,81 @@ Local:      http://localhost:3000
 
 ## Authentication
 
-All content ingestion requires a Bearer token:
+All write operations (POST, PATCH, DELETE) require a Bearer token:
 
 ```
 Authorization: Bearer <NEWS_INGEST_API_KEY>
 ```
 
-The `NEWS_INGEST_API_KEY` is set server-side in the `.env` file on the AVH VM (192.168.0.110). It is never exposed to the frontend or in `NEXT_PUBLIC_*` variables.
+The `NEWS_INGEST_API_KEY` is set server-side in `.env` on the AVH VM. It is never exposed to the frontend.
+
+Read operations (GET) are public — no auth required.
 
 ---
 
-## POST /api/v1/news — Ingest News Article
+## Endpoints
 
-### Request
+### 1. Create Article
+
+```
+POST /api/v1/news
+```
+
+**Auth:** Bearer token required
+
+**Request body (JSON):**
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `headline` | string | ✅ | Article headline (max 500 chars). Clear, factual, no clickbait. |
+| `summary` | string | ❌ | Original summary (max 5000 chars). Hook-first, 2-3 short paragraphs. |
+| `analysis` | string | ❌ | Business analysis (max 5000 chars). Why it matters for enterprise leaders. |
+| `why_it_matters` or `whyItMatters` | string | ❌ | 1-2 sentences. What should a leader DO? (max 2000 chars) |
+| `source_name` or `sourceName` | string | ❌ | Publisher name |
+| `source_url` or `sourceUrl` | string | ❌ | Original article URL (must be valid URL) |
+| `published_at` or `publishedAt` | ISO 8601 string | ❌ | Original publication date (e.g., "2026-09-20T10:00:00Z") |
+| `image_url` or `imageUrl` | string | ❌ | Image URL (must be valid URL) |
+| `categories` | string[] | ❌ | e.g., ["Agentic AI", "Enterprise AI"] |
+| `tags` | string[] | ❌ | e.g., ["agents", "orchestration"] |
+| `companies` | string[] | ❌ | Companies mentioned |
+| `industries` | string[] | ❌ | e.g., ["Finance", "Healthcare"] |
+| `business_functions` or `businessFunctions` | string[] | ❌ | e.g., ["IT Operations"] |
+| `technologies` | string[] | ❌ | e.g., ["AI Agents", "RPA"] |
+| `slug` | string | ❌ | URL slug (auto-generated from headline if not provided) |
+
+**Processing pipeline:**
+1. Validate Bearer token
+2. Validate schema (Zod)
+3. Auto-generate slug from headline (if not provided)
+4. Normalize canonical URL (strip tracking params)
+5. Calculate content hash (SHA-256 of headline + summary + source_url)
+6. Check for duplicates (by content hash, then canonical URL)
+7. Sanitize content (strip HTML, cap lengths)
+8. Create IngestionEvent (audit log)
+9. Store in PostgreSQL
+
+**Example:**
 
 ```bash
 curl -X POST https://agenticvaluehub.com/api/v1/news \
   -H "Authorization: Bearer YOUR_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
-    "headline": "OpenAI launches new enterprise agent framework",
-    "summary": "Original summary written by the ingestion pipeline. Not copyrighted content.",
-    "analysis": "Business implications for enterprise automation leaders.",
-    "why_it_matters": "Enterprise leaders should evaluate this for their BOAT strategy.",
+    "headline": "AI Agents Are Quietly Taking Over Enterprise Support",
+    "summary": "The boring truth about AI agents: they handle the 80% of support tickets nobody wants.",
+    "analysis": "Companies report 40-60% reduction in tier-1 ticket volume with agentic AI.",
+    "why_it_matters": "If you run a support team over 20 people, pilot agentic AI on low-complexity tickets this quarter.",
     "source_name": "TechCrunch",
-    "source_url": "https://techcrunch.com/example-article",
+    "source_url": "https://techcrunch.com/example",
     "published_at": "2026-09-20T10:00:00Z",
     "categories": ["Agentic AI", "Enterprise AI"],
-    "tags": ["agents", "orchestration"],
+    "tags": ["agents", "support", "automation"],
     "companies": ["OpenAI"],
-    "industries": ["Technology"],
-    "business_functions": ["IT Operations"],
-    "technologies": ["AI Agents", "LLM Orchestration"],
-    "image_url": "https://cdn.agenticvaluehub.com/images/uuid.jpg"
+    "technologies": ["AI Agents"]
   }'
 ```
 
-### Request Fields
-
-| Field | Type | Required | Max Length | Description |
-|-------|------|----------|------------|-------------|
-| `headline` | string | ✅ | 500 | Article headline |
-| `summary` | string | ✅ | 5000 | Original summary (NOT copied content) |
-| `analysis` | string | ❌ | 5000 | Business analysis |
-| `why_it_matters` | string | ❌ | 2000 | Why enterprise leaders should care |
-| `source_name` | string | ✅ | 255 | Publisher name |
-| `source_url` | string | ✅ | 2048 | Original article URL |
-| `published_at` | ISO 8601 | ✅ | — | **Original publication date** (not ingestion date) |
-| `image_url` | string | ❌ | 2048 | URL to generated/associated image |
-| `categories` | string[] | ❌ | — | e.g. ["Agentic AI", "Automation"] |
-| `tags` | string[] | ❌ | — | e.g. ["agents", "orchestration"] |
-| `companies` | string[] | ❌ | — | Companies mentioned |
-| `industries` | string[] | ❌ | — | e.g. ["Finance", "Healthcare"] |
-| `business_functions` | string[] | ❌ | — | e.g. ["IT Operations", "Finance"] |
-| `technologies` | string[] | ❌ | — | e.g. ["AI Agents", "RPA"] |
-
-### Processing Pipeline
-
-```
-1. Auth: validate Bearer token against NEWS_INGEST_API_KEY
-2. Validate: Zod schema validation (required fields, types, max lengths)
-3. Normalize URL:
-   - Strip tracking params (utm_*, fbclid, ref, gclid)
-   - Lowercase hostname
-   - Remove www. prefix
-   - Remove default port (:80/:443)
-   - Remove fragment (#...)
-   - Sort remaining query params
-   - Remove trailing slash
-4. Content hash: SHA-256(headline | summary | source_url)
-5. Duplicate check:
-   a. Check by content_hash → if match: 409 duplicate
-   b. Check by canonical_url → if match: 409 duplicate
-6. Sanitize:
-   - Strip HTML tags from all text fields
-   - Decode HTML entities
-   - Cap field lengths
-7. Create IngestionEvent (audit trail — always, even on failure)
-8. Create News record (status: PUBLISHED)
-9. Return response
-```
-
-### Success Response (201)
-
+**Success (201):**
 ```json
 {
   "success": true,
@@ -131,209 +92,220 @@ curl -X POST https://agenticvaluehub.com/api/v1/news \
 }
 ```
 
-### Duplicate Response (409)
-
+**Duplicate (409):**
 ```json
 {
   "success": false,
-  "error": "duplicate",
-  "message": "Content with this fingerprint or URL already exists",
-  "existing_id": "uuid-here"
+  "status": "duplicate",
+  "error": "Duplicate content hash",
+  "news_id": "existing-uuid"
 }
 ```
 
-### Error Responses
+**Validation error (422):**
+```json
+{
+  "error": "Validation failed",
+  "issues": { "headline": ["Required"] }
+}
+```
 
-| Status | Meaning | Body |
-|--------|---------|------|
-| 401 | Missing/invalid Bearer token | `{ "error": "unauthorized" }` |
-| 422 | Validation error | `{ "error": "validation", "details": [...] }` |
-| 409 | Duplicate detected | `{ "success": false, "error": "duplicate", "existing_id": "..." }` |
-| 429 | Rate limited | `{ "error": "rate_limited", "retry_after": 60 }` |
-| 500 | Server error | `{ "error": "internal_error" }` |
+**Unauthorized (401):**
+```json
+{ "error": "Unauthorized" }
+}
+```
 
 ---
 
-## GET /api/v1/news — List Articles
+### 2. List Articles
 
-```bash
-# All news (paginated)
-curl https://agenticvaluehub.com/api/v1/news?page=1&limit=20
-
-# Filter by category
-curl https://agenticvaluehub.com/api/v1/news?category=Agentic+AI
-
-# Filter by company
-curl https://agenticvaluehub.com/api/v1/news?company=OpenAI
-
-# Keyword search
-curl https://agenticvaluehub.com/api/v1/news?q=orchestration
+```
+GET /api/v1/news
 ```
 
-Query params:
+**Auth:** None (public)
+
+**Query parameters:**
 
 | Param | Default | Description |
 |-------|---------|-------------|
-| `page` | 1 | Page number |
 | `limit` | 20 | Items per page (max 100) |
+| `offset` | 0 | Pagination offset |
 | `category` | — | Filter by category |
 | `tag` | — | Filter by tag |
 | `company` | — | Filter by company |
+| `industry` | — | Filter by industry |
+| `technology` | — | Filter by technology |
+| `status` | — | Filter by status (PUBLISHED, DRAFT, ARCHIVED) |
 | `q` | — | Keyword search (headline + summary) |
+
+**Example:**
+```bash
+curl https://agenticvaluehub.com/api/v1/news?limit=5&q=automation
+```
 
 ---
 
-## GET /api/v1/news/:id — Single Article
+### 3. Get Single Article
 
+```
+GET /api/v1/news/:id
+```
+
+**Auth:** None (public)
+
+**Example:**
 ```bash
 curl https://agenticvaluehub.com/api/v1/news/uuid-here
 ```
 
 ---
 
-## Where Data Lands in the Database
-
-### Database Connection
+### 4. Update Article
 
 ```
-postgresql://avh:***@192.168.0.111:5432/avh
+PATCH /api/v1/news/:id
+```
+
+**Auth:** Bearer token required
+
+**Updatable fields:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `headline` | string | New headline |
+| `summary` | string | New summary |
+| `analysis` | string | New analysis |
+| `whyItMatters` | string | New why it matters |
+| `sourceName` | string | New source name |
+| `sourceUrl` | string | New source URL |
+| `imageUrl` | string | New image URL |
+| `categories` | string[] | Replace categories |
+| `tags` | string[] | Replace tags |
+| `companies` | string[] | Replace companies |
+| `industries` | string[] | Replace industries |
+| `businessFunctions` | string[] | Replace business functions |
+| `technologies` | string[] | Replace technologies |
+| `status` | string | Change status: PUBLISHED, DRAFT, ARCHIVED |
+
+**Only provided fields are updated.** Unspecified fields remain unchanged.
+
+**Example:**
+```bash
+curl -X PATCH https://agenticvaluehub.com/api/v1/news/uuid-here \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "headline": "Updated headline",
+    "status": "DRAFT",
+    "tags": ["updated", "tags"]
+  }'
+```
+
+**Success (200):**
+```json
+{
+  "success": true,
+  "news": { ...updatedArticle }
+}
+```
+
+---
+
+### 5. Delete Article
+
+```
+DELETE /api/v1/news/:id
+```
+
+**Auth:** Bearer token required
+
+**Example:**
+```bash
+curl -X DELETE https://agenticvaluehub.com/api/v1/news/uuid-here \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+
+**Success (200):**
+```json
+{
+  "success": true,
+  "deleted_id": "uuid-here"
+}
+```
+
+---
+
+## Database Schema
+
+Articles are stored in PostgreSQL at `192.168.0.111:5432`:
+
+```
+Database: avh
+User: avh
+Tables: news, ingestion_events, news_use_cases
 ```
 
 ### Table: `news`
 
-All ingested articles are stored in the `news` table. Here's how each API field maps to the database:
-
-| API Field | DB Column | Type | Notes |
-|-----------|----------|------|-------|
-| (auto) | `id` | UUID | Auto-generated, primary key |
-| (auto from headline) | `slug` | VARCHAR | URL-friendly slug, unique |
-| `headline` | `headline` | VARCHAR(500) | Article headline |
-| `summary` | `summary` | TEXT | Original summary |
-| `analysis` | `analysis` | TEXT | Business analysis |
-| `why_it_matters` | `whyItMatters` | TEXT | Enterprise relevance |
-| `source_name` | `sourceName` | VARCHAR(255) | Publisher |
-| `source_url` | `sourceUrl` | VARCHAR(2048) | Original URL |
-| (normalized) | `canonicalUrl` | VARCHAR(2048) | Normalized URL (dedup key) |
-| `published_at` | `publishedAt` | TIMESTAMP | **Original publication date** |
-| (auto) | `ingestedAt` | TIMESTAMP | When the API received it |
-| `image_url` | `imageUrl` | VARCHAR(2048) | Generated image URL |
-| `categories` | `categories` | TEXT[] | PostgreSQL array |
-| `tags` | `tags` | TEXT[] | PostgreSQL array |
-| `companies` | `companies` | TEXT[] | PostgreSQL array |
-| `industries` | `industries` | TEXT[] | PostgreSQL array |
-| `business_functions` | `businessFunctions` | TEXT[] | PostgreSQL array |
-| `technologies` | `technologies` | TEXT[] | PostgreSQL array |
-| (calculated) | `contentHash` | VARCHAR(64) | SHA-256 fingerprint, unique |
-| (auto) | `status` | ENUM | PUBLISHED, DRAFT, ARCHIVED |
-| (auto) | `createdAt` | TIMESTAMP | Record creation time |
-| (auto) | `updatedAt` | TIMESTAMP | Last update time |
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | UUID | Primary key (auto) |
+| `slug` | VARCHAR | URL slug (unique) |
+| `headline` | VARCHAR(500) | Article headline |
+| `summary` | TEXT | Summary |
+| `analysis` | TEXT | Business analysis |
+| `whyItMatters` | TEXT | Why it matters |
+| `sourceName` | VARCHAR(255) | Publisher |
+| `sourceUrl` | VARCHAR(2048) | Original URL |
+| `canonicalUrl` | VARCHAR(2048) | Normalized URL (dedup) |
+| `publishedAt` | TIMESTAMP | Original publication date |
+| `ingestedAt` | TIMESTAMP | When ingested |
+| `imageUrl` | VARCHAR(2048) | Image URL |
+| `categories` | TEXT[] | Categories array |
+| `tags` | TEXT[] | Tags array |
+| `companies` | TEXT[] | Companies array |
+| `industries` | TEXT[] | Industries array |
+| `businessFunctions` | TEXT[] | Business functions array |
+| `technologies` | TEXT[] | Technologies array |
+| `contentHash` | VARCHAR(64) | SHA-256 fingerprint (unique) |
+| `status` | ENUM | PUBLISHED, DRAFT, ARCHIVED |
+| `createdAt` | TIMESTAMP | Record creation |
+| `updatedAt` | TIMESTAMP | Last update |
 
 ### Table: `ingestion_events`
 
-Every API call (success, duplicate, or error) creates an audit record:
-
-| DB Column | Type | Description |
-|----------|------|-------------|
-| `id` | UUID | Auto-generated |
-| `source` | VARCHAR | "api" (or future: "admin", "manual") |
-| `requestId` | VARCHAR | Unique request identifier |
-| `status` | VARCHAR | "success", "duplicate", "error" |
-| `payloadMetadata` | JSON | { headline, source_url, content_hash } |
-| `errorMessage` | TEXT | Error details (if failed) |
-| `createdAt` | TIMESTAMP | When the event occurred |
-
-### Table: `news_use_cases`
-
-Links news articles to related use cases (many-to-many):
-
-| DB Column | Type | Description |
-|----------|------|-------------|
-| `newsId` | UUID | FK → news.id |
-| `useCaseId` | UUID | FK → use_cases.id |
-| `relevanceScore` | FLOAT | 0-1 similarity score |
-
----
-
-## Historical Data Support
-
-The API preserves the **original publication date** from the source:
-
-- `published_at` = when the original article was published (from RSS, web meta tags, or YouTube)
-- `ingestedAt` = when the journalist agent processed and submitted it
-- `createdAt` = when the database record was created
-
-This allows backfilling historical content — agents can submit articles from months ago, and they'll appear with the correct date in the news feed.
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | UUID | Auto |
+| `source` | VARCHAR | "api" or "admin" |
+| `requestId` | VARCHAR | Request identifier |
+| `status` | VARCHAR | success, duplicate, error |
+| `payloadMetadata` | JSON | Request metadata |
+| `errorMessage` | TEXT | Error details |
+| `createdAt` | TIMESTAMP | Event time |
 
 ---
 
 ## Rate Limiting
 
-- All `/api` routes are rate-limited per-IP
-- News ingestion: 30 requests/minute per IP
-- Response headers: `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset`
-- When exceeded: 429 with `Retry-After` header
+- All `/api` routes: 30 requests/minute per IP
+- Headers: `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset`
+- Exceeded: 429 with `Retry-After`
 
 ---
 
-## Journalist Pipeline Integration
+## Status Codes Summary
 
-The [Agentic Value Hub Journalist](https://github.com/Laurentcadieux/Agentic-Value-Hub-journalist) repo contains 15 AI journalist agents that use this API:
-
-```
-15 Journalist Agents
-  ├── Enterprise AI Watcher     → POST /api/v1/news
-  ├── Agentic AI Scout          → POST /api/v1/news
-  ├── Automation Tracker        → POST /api/v1/news
-  ├── BOAT Observer             → POST /api/v1/news
-  ├── Investment Monitor        → POST /api/v1/news
-  ├── Research Digest           → POST /api/v1/news
-  ├── Governance Reporter       → POST /api/v1/news
-  ├── Industry Vertical         → POST /api/v1/news
-  ├── Integration Intel         → POST /api/v1/news
-  ├── Market Pulse              → POST /api/v1/news
-  ├── Canada Focus              → POST /api/v1/news
-  ├── EU Focus                  → POST /api/v1/news
-  ├── Security                  → POST /api/v1/news
-  ├── Governance & Policy       → POST /api/v1/news
-  └── US Focus                  → POST /api/v1/news
-```
-
-Each agent:
-1. Fetches content from RSS feeds, YouTube channels, and web sources
-2. Writes original summaries (never copies copyrighted content)
-3. Generates standardized images (1200×630)
-4. Preserves original publication dates (historical backfilling)
-5. POSTs to `/api/v1/news` with Bearer auth
-6. Handles 409 (duplicate) gracefully — skips and continues
-
----
-
-## Querying Ingested Data
-
-### From the public website
-
-- `/news` — browse all news (sorted by publishedAt desc)
-- `/news/[slug]` — read single article with analysis
-- `/api/v1/news?q=keyword` — search API
-
-### From the admin panel
-
-- `/admin/news` — manage all articles (edit, archive, delete)
-- `/admin/ingestion` — monitor ingestion events (audit log)
-
-### Direct database query (for analytics)
-
-```sql
--- Articles by category
-SELECT categories, COUNT(*) FROM news WHERE status = 'PUBLISHED' GROUP BY categories;
-
--- Articles per source
-SELECT source_name, COUNT(*) FROM news GROUP BY source_name ORDER BY count DESC;
-
--- Ingestion success rate
-SELECT status, COUNT(*) FROM ingestion_events GROUP BY status;
-
--- Recent duplicates
-SELECT payload_metadata, error_message, created_at
-FROM ingestion_events WHERE status = 'duplicate' ORDER BY created_at DESC LIMIT 10;
-```
+| Code | Meaning |
+|------|---------|
+| 200 | Success (GET, PATCH, DELETE) |
+| 201 | Created (POST) |
+| 400 | Invalid JSON |
+| 401 | Unauthorized (missing/invalid Bearer token) |
+| 404 | Not found |
+| 409 | Duplicate |
+| 422 | Validation failed |
+| 429 | Rate limited |
+| 500 | Server error |
