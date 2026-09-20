@@ -28,7 +28,7 @@ import { computeContentHash } from '@/lib/utils/hash'
 import { sanitizeTextField, FIELD_LIMITS } from '@/lib/utils/sanitize'
 
 export const newsIngestSchema = z.object({
-  slug: z.string().min(1).max(FIELD_LIMITS.slug),
+  slug: z.string().min(1).max(FIELD_LIMITS.slug).optional(),
   headline: z.string().min(1).max(FIELD_LIMITS.headline),
   summary: z.string().optional(),
   analysis: z.string().optional(),
@@ -142,7 +142,16 @@ export async function ingestNews(
       sourceUrl: input.sourceUrl ?? null,
     })
 
-  const metadata = { contentHash, canonicalUrl, slug: input.slug }
+  // 3.5. Auto-generate slug from headline if not provided.
+  const slug =
+    input.slug ??
+    headline
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .slice(0, 80) + '-' + randomUUID().slice(0, 8)
+
+  const metadata = { contentHash, canonicalUrl, slug }
 
   // 4. Duplicate detection — content hash first, then canonical URL.
   const dupByHash = await findByContentHash(contentHash)
@@ -178,7 +187,7 @@ export async function ingestNews(
   // 5. Persist + audit success.
   try {
     const news = await createNews({
-      slug: input.slug,
+      slug,
       headline,
       summary,
       analysis,
