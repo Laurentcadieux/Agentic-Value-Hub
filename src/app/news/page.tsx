@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
-import { getNewsSortedByDate, type DemoNewsItem } from '@/lib/demo-data'
 import { NewsCard } from '@/components/NewsCard'
 import { PageHeader } from '@/components/PageHeader'
+import type { NewsCardItem } from '@/types/news'
 import { prisma } from '@/lib/prisma'
 
 export const metadata: Metadata = {
@@ -27,8 +27,8 @@ type DbNewsItem = {
 }
 
 export default async function NewsPage() {
-  // Try database first, fall back to demo data
-  let news: (DbNewsItem | DemoNewsItem)[] = []
+  // Try database first, fall back to empty state
+  let news: DbNewsItem[] = []
   let useDb = false
 
   try {
@@ -85,13 +85,13 @@ export default async function NewsPage() {
       <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
         {lead ? (
           <div className="border-b border-neutral-200 pb-10 dark:border-neutral-800">
-            <NewsCard item={lead as DemoNewsItem} variant="featured" />
+            <NewsCard item={lead as NewsCardItem} variant="featured" />
           </div>
         ) : null}
         {rest.length > 0 ? (
           <div className="grid grid-cols-1 gap-8 py-10 md:grid-cols-2 lg:grid-cols-3">
             {rest.map((item, i) => (
-              <NewsCard key={useDb ? (item as DbNewsItem).id : i} item={item as DemoNewsItem} />
+              <NewsCard key={useDb ? (item as DbNewsItem).id : i} item={item as NewsCardItem} />
             ))}
           </div>
         ) : (

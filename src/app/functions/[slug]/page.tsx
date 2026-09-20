@@ -2,7 +2,6 @@ import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import {
   demoFunctions,
-  demoNews,
   getFunctionBySlug,
   getUseCasesForFunction,
 } from '@/lib/demo-data'
@@ -37,7 +36,7 @@ export default async function FunctionDetailPage({ params }: Params) {
   const item = getFunctionBySlug(slug)
   if (!item) notFound()
 
-  const news = demoNews.filter((n) => n.businessFunctions.includes(item.name))
+  const news: never[] = []
 
   return (
     <TaxonomyDetail

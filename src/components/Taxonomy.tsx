@@ -1,5 +1,6 @@
 import Link from 'next/link'
-import type { DemoNewsItem, DemoTaxonomyItem, DemoUseCase } from '@/lib/demo-data'
+import type { DemoTaxonomyItem, DemoUseCase } from '@/lib/demo-data'
+import type { NewsCardItem } from '@/types/news'
 import { NewsCard } from './NewsCard'
 import { PageHeader } from './PageHeader'
 import { UseCaseCard } from './UseCaseCard'
@@ -66,7 +67,7 @@ export function TaxonomyDetail({
   description: string
   breadcrumb: { label: string; href: string }
   useCases: DemoUseCase[]
-  news: DemoNewsItem[]
+  news: NewsCardItem[]
 }) {
   const hasContent = useCases.length > 0 || news.length > 0
   return (

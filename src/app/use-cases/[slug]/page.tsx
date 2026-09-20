@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { demoNews, demoUseCases, getUseCaseBySlug } from '@/lib/demo-data'
+import { demoUseCases, getUseCaseBySlug } from '@/lib/demo-data'
 import { siteConfig } from '@/lib/seo'
 import { useCaseService, normalizePotential } from '@/services/usecase-service'
 import type { UseCaseDTO, RelatedResult } from '@/services/usecase-service'
@@ -110,23 +110,8 @@ function relatedDemoUseCases(slug: string): DetailView['related'] {
 }
 
 /** Related demo news by industry/function/technology overlap. */
-function relatedDemoNews(slug: string): DetailView['relatedNews'] {
-  const source = getUseCaseBySlug(slug)
-  if (!source) return []
-  return demoNews
-    .filter((n) =>
-      n.industries.includes(source.industry) ||
-      n.businessFunctions.includes(source.businessFunction) ||
-      n.technologies.some((t) => source.technologies.includes(t)),
-    )
-    .slice(0, 4)
-    .map((n) => ({
-      slug: n.slug,
-      headline: n.headline,
-      sourceName: n.sourceName,
-      publishedAt: n.publishedAt,
-      summary: n.summary,
-    }))
+function relatedDemoNews(_slug: string): DetailView['relatedNews'] {
+  return []
 }
 
 export async function generateMetadata({ params }: Params): Promise<Metadata> {

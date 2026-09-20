@@ -1,7 +1,6 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import {
-  demoNews,
   demoTechnologies,
   getTechnologyBySlug,
   getUseCasesForTechnology,
@@ -37,7 +36,7 @@ export default async function TechnologyDetailPage({ params }: Params) {
   const item = getTechnologyBySlug(slug)
   if (!item) notFound()
 
-  const news = demoNews.filter((n) => n.technologies.includes(item.name))
+  const news: never[] = []
 
   return (
     <TaxonomyDetail

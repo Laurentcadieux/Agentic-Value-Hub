@@ -1,5 +1,6 @@
 import Link from 'next/link'
-import type { DemoNewsItem, DemoUseCase } from '@/lib/demo-data'
+import type { NewsCardItem } from '@/types/news'
+import type { DemoUseCase } from '@/lib/demo-data'
 import { NewsCard } from './NewsCard'
 import { UseCaseCard } from './UseCaseCard'
 
@@ -11,7 +12,7 @@ export function TrendingSidebar({
   mostRead,
   trendingUseCases,
 }: {
-  mostRead: DemoNewsItem[]
+  mostRead: NewsCardItem[]
   trendingUseCases: DemoUseCase[]
 }) {
   return (

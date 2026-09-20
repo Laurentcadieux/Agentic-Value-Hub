@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import type { DemoNewsItem } from '@/lib/demo-data'
+import type { NewsCardItem } from '@/types/news'
 import { NewsCard } from './NewsCard'
 
 /**
@@ -16,8 +16,8 @@ export function HeroSection({
 }: {
   tagline: string
   subheading: string
-  lead?: DemoNewsItem
-  secondary?: DemoNewsItem[]
+  lead?: NewsCardItem
+  secondary?: NewsCardItem[]
 }) {
   return (
     <section className="border-b border-neutral-200 dark:border-neutral-800">

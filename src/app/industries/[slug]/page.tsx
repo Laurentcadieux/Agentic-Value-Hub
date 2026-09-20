@@ -3,7 +3,6 @@ import { notFound } from 'next/navigation'
 import {
   demoIndustries,
   getIndustryBySlug,
-  getNewsForIndustry,
   getUseCasesForIndustry,
 } from '@/lib/demo-data'
 import { TaxonomyDetail } from '@/components/Taxonomy'
@@ -44,7 +43,7 @@ export default async function IndustryDetailPage({ params }: Params) {
       description={item.description}
       breadcrumb={{ label: 'Industries', href: '/industries' }}
       useCases={getUseCasesForIndustry(item.name)}
-      news={getNewsForIndustry(item.name)}
+      news={[]}
     />
   )
 }
