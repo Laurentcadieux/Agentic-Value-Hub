@@ -168,9 +168,18 @@ model News {
   id                String         @id @default(uuid())
   slug              String         @unique
   headline          String
+  subtitle          String?
   summary           String?
   analysis          String?
   whyItMatters      String?
+  conclusion        String?
+  keyTakeaways      String[]
+  pullQuotes        String[]
+  author            String?
+  readingTimeMinutes Int?
+  ctaLabel          String?
+  ctaUrl            String?
+  isFeatured        Boolean        @default(false)
   sourceName        String?
   sourceUrl         String?
   canonicalUrl      String?
