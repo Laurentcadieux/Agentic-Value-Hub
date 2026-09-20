@@ -1,0 +1,220 @@
+// Agentic Value Hub — Prisma schema
+// See spec for full field semantics. All IDs are UUIDs (String @id @default(uuid())).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  MEMBER
+  VIEWER
+}
+
+enum IdeaStatus {
+  DRAFT
+  SUBMITTED
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
+  ARCHIVED
+}
+
+enum ConversationType {
+  DISCOVERY
+  REFINEMENT
+  VALIDATION
+}
+
+enum MessageRole {
+  USER
+  ASSISTANT
+  SYSTEM
+}
+
+enum NewsStatus {
+  PUBLISHED
+  DRAFT
+  ARCHIVED
+}
+
+enum UseCaseStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+model Customer {
+  id            String   @id @default(uuid())
+  companyName   String
+  website       String?
+  industry      String?
+  employeeRange String?
+  country       String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  users         User[]
+  ideas         Idea[]
+  conversations Conversation[]
+  useCases      UseCase[]
+  news          News[]
+
+  @@map("customers")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  customerId String
+  email     String   @unique
+  firstName String?
+  lastName  String?
+  role      UserRole @default(MEMBER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  customer      Customer      @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  conversations Conversation[]
+  ideas         Idea[]
+
+  @@map("users")
+}
+
+model Idea {
+  id            String      @id @default(uuid())
+  customerId    String
+  userId        String?
+  title         String
+  description   String?
+  status        IdeaStatus   @default(DRAFT)
+  valueScore    Float?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  customer      Customer      @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  user          User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+  conversations Conversation[]
+
+  @@map("ideas")
+}
+
+model Conversation {
+  id               String           @id @default(uuid())
+  customerId       String
+  userId           String?
+  ideaId           String?
+  conversationType ConversationType
+  title            String?
+  summary          String?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  customer  Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  user      User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  idea      Idea?     @relation(fields: [ideaId], references: [id], onDelete: SetNull)
+  messages  Message[]
+
+  @@map("conversations")
+}
+
+model Message {
+  id             String      @id @default(uuid())
+  conversationId  String
+  role           MessageRole
+  content        String
+  metadata       Json?
+  createdAt      DateTime    @default(now())
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@map("messages")
+}
+
+model UseCase {
+  id                 String         @id @default(uuid())
+  slug               String         @unique
+  title              String
+  industry           String?
+  businessFunction   String?
+  problem            String?
+  description        String?
+  agentPattern       String?
+  automationPattern  String?
+  valueDrivers       String[]
+  systems            String[]
+  technologies       String[]
+  automationPotential Float?
+  complexity         String?
+  risks              String?
+  controls           String?
+  sourceRefs         Json?
+  status             UseCaseStatus  @default(DRAFT)
+  customerId         String?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  customer   Customer?     @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  newsUseCases NewsUseCase[]
+
+  @@map("use_cases")
+}
+
+model News {
+  id                String         @id @default(uuid())
+  slug              String         @unique
+  headline          String
+  summary           String?
+  analysis          String?
+  whyItMatters      String?
+  sourceName        String?
+  sourceUrl         String?
+  canonicalUrl      String?
+  publishedAt       DateTime?
+  ingestedAt        DateTime       @default(now())
+  imageUrl          String?
+  categories        String[]
+  tags              String[]
+  companies         String[]
+  industries        String[]
+  businessFunctions String[]
+  technologies      String[]
+  contentHash       String?        @unique
+  status            NewsStatus     @default(PUBLISHED)
+  customerId        String?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  customer     Customer?     @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  newsUseCases NewsUseCase[]
+
+  @@map("news")
+}
+
+model NewsUseCase {
+  newsId         String
+  useCaseId      String
+  relevanceScore Float?
+
+  news    News    @relation(fields: [newsId], references: [id], onDelete: Cascade)
+  useCase UseCase @relation(fields: [useCaseId], references: [id], onDelete: Cascade)
+
+  @@id([newsId, useCaseId])
+  @@map("news_use_cases")
+}
+
+model IngestionEvent {
+  id               String   @id @default(uuid())
+  source           String
+  requestId        String?
+  status           String
+  payloadMetadata  Json?
+  errorMessage     String?
+  createdAt        DateTime @default(now())
+
+  @@map("ingestion_events")
+}
