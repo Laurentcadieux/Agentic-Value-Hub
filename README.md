@@ -34,9 +34,12 @@ Agentic-Value-Hub/
 │   ├── avh-nginx.conf      # Nginx config for the standalone server
 │   └── ecosystem.config.cjs  # PM2 process config
 ├── docs/
-│   ├── PRODUCTION.md       # production guide (DB, backups, monitoring)
-│   ├── SECURITY.md        # security checklist, headers, rate limiting
-│   └── DEPLOYMENT.md      # step-by-step deploy via My_Hybrid_infra
+│   ├── NEWS_MANAGEMENT.md       # news API guide (CRUD, fields, visibility)
+│   ├── USE_CASE_MANAGEMENT.md   # use case API guide (CRUD, fields, visibility, BOAT)
+│   ├── CONTENT_API.md           # technical API reference
+│   ├── PRODUCTION.md            # production guide (DB, backups, monitoring)
+│   ├── SECURITY.md              # security checklist, headers, rate limiting
+│   └── DEPLOYMENT.md            # step-by-step deploy via My_Hybrid_infra
 ├── next.config.ts          # standalone output + security headers
 ├── src/middleware.ts       # /api rate limiting
 └── .env.example           # all environment variables documented
@@ -88,6 +91,50 @@ npx tsc --noEmit && npx next lint && npx next build
 
 All three must pass clean with `output: 'standalone'` enabled
 (`next.config.ts`).
+
+## Content APIs
+
+The Hub has two independent content APIs, both at `https://agenticvaluehub.com/api/v1`:
+
+### News API
+
+Full CRUD for news articles. All fields are public (no hidden fields).
+
+| Method | Path | Auth | Description |
+|--------|------|:----:|-------------|
+| POST | `/api/v1/news` | ✅ | Create article |
+| GET | `/api/v1/news` | ❌ | List articles |
+| GET | `/api/v1/news/:id` | ❌ | Get single |
+| PATCH | `/api/v1/news/:id` | ✅ | Update |
+| DELETE | `/api/v1/news/:id` | ✅ | Delete |
+
+📖 **Full guide:** [`docs/NEWS_MANAGEMENT.md`](docs/NEWS_MANAGEMENT.md) — all fields, visibility, examples, AI workflow.
+
+### Use Cases API
+
+Full CRUD for enterprise AI use cases. Stores all data but only shows **generic** info publicly — sensitive fields (submitter info, risks, controls, systems) are hidden without auth.
+
+| Method | Path | Auth | Description |
+|--------|------|:----:|-------------|
+| POST | `/api/v1/use-cases` | ✅ | Create use case |
+| GET | `/api/v1/use-cases` | ❌/✅ | List (public fields without auth, all with auth) |
+| GET | `/api/v1/use-cases/:id` | ❌/✅ | Get single (public/auth) |
+| PATCH | `/api/v1/use-cases/:id` | ✅ | Update |
+| DELETE | `/api/v1/use-cases/:id` | ✅ | Delete |
+
+📖 **Full guide:** [`docs/USE_CASE_MANAGEMENT.md`](docs/USE_CASE_MANAGEMENT.md) — all fields, visibility flags, Gartner BOAT capabilities, metrics, examples.
+
+### Image Upload
+
+| Method | Path | Auth | Description |
+|--------|------|:----:|-------------|
+| POST | `/api/v1/upload` | ✅ | Upload image (JPG, PNG, WebP, GIF, SVG, max 10MB) |
+
+### Auth Token
+
+Both APIs use the same Bearer token: `NEWS_INGEST_API_KEY` (set in `.env` on the VM).
+
+---
 
 ## Legal pages
 

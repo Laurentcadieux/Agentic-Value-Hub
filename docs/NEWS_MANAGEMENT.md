@@ -5,10 +5,7 @@
 ## Quick Start
 
 ```bash
-# Base URL
 BASE=https://agenticvaluehub.com
-
-# Auth token (required for all write operations)
 API_KEY=LUZ26Le0KX6sZU9x_H5F6wY1XTN6Fff5gZGJQfAG44g
 
 # Minimal article
@@ -24,60 +21,51 @@ curl -X POST $BASE/api/v1/news \
 
 | Operation | Auth Required |
 |-----------|:------------:|
-| GET (list, single) | ❌ No |
+| GET (list, single) | ❌ No (all fields public) |
 | POST (create) | ✅ Yes |
 | PATCH (update) | ✅ Yes |
 | DELETE | ✅ Yes |
 | POST /upload | ✅ Yes |
 
-Send token as:
-```
-Authorization: Bearer <API_KEY>
-```
+News articles have **no hidden fields** — all data is public once published.
 
 ---
 
-## Full Article Schema
+## Field Visibility Guide
 
-All fields an article can have. Only `headline` is required.
+> All news fields are **public** — they appear on the website and in the public API. There are no sensitive/hidden fields for news (unlike use cases).
 
-### Core Content
+### 🟢 Public Fields (visible on website + public API)
 
-| Field | Type | Required | Example | Description |
-|-------|------|:--------:|---------|-------------|
-| `headline` | string | ✅ | "AI Agents Automate 75% of Workflows" | Clear, factual, no clickbait (max 500 chars) |
-| `subtitle` | string | ❌ | "McKinsey study shows tech crossed the chasm" | Deck/kicker under headline (1 sentence) |
-| `summary` | string | ❌ | "A 500-company study reveals..." | Hook-first summary, 2-3 short paragraphs |
-| `analysis` | string | ❌ | "The data shows 40% cost reduction..." | Business analysis for enterprise leaders |
-| `whyItMatters` | string | ❌ | "Start mapping which workflows can be automated" | 1-2 sentences: what should a leader DO? |
-| `conclusion` | string | ❌ | "The technology is ready — the window is closing" | Closing thought, separate from why_it_matters |
-
-### Enhanced Presentation
-
-| Field | Type | Required | Example | Description |
-|-------|------|:--------:|---------|-------------|
-| `keyTakeaways` | string[] | ❌ | `["40% cost reduction", "3x faster"]` | 3-5 scannable bullet points |
-| `pullQuotes` | string[] | ❌ | `["The bottleneck is trust, not tech"]` | 1-3 notable quotes to highlight visually |
-| `author` | string | ❌ | "Enterprise AI Scout" | Journalist/agent name |
-| `readingTimeMinutes` | int | ❌ | `5` | Estimated read time (1-120) |
-| `isFeatured` | boolean | ❌ | `true` | Show on homepage hero |
-| `ctaLabel` | string | ❌ | "Explore use cases" | CTA button text |
-| `ctaUrl` | string (URL) | ❌ | "https://agenticvaluehub.com/use-cases" | CTA button link |
-
-### Metadata
-
-| Field | Type | Required | Example | Description |
-|-------|------|:--------:|---------|-------------|
-| `image_url` | string (URL) | ❌ | "https://agenticvaluehub.com/uploads/uuid.jpg" | Article image |
-| `source_name` | string | ❌ | "TechCrunch" | Original publisher |
-| `source_url` | string (URL) | ❌ | "https://techcrunch.com/..." | Original article URL |
-| `published_at` | ISO 8601 | ❌ | "2026-09-20T10:00:00Z" | Original publication date |
-| `categories` | string[] | ❌ | `["Agentic AI", "Enterprise AI"]` | Category tags |
-| `tags` | string[] | ❌ | `["agents", "automation"]` | Free-form tags |
-| `companies` | string[] | ❌ | `["OpenAI", "McKinsey"]` | Companies mentioned |
-| `industries` | string[] | ❌ | `["Finance", "Healthcare"]` | Industry tags |
-| `businessFunctions` | string[] | ❌ | `["IT Operations"]` | Business function tags |
-| `technologies` | string[] | ❌ | `["AI Agents", "RPA"]` | Technology tags |
+| Field | Type | Required | Example | Website Renders | Description |
+|-------|------|:--------:|---------|:---------------:|-------------|
+| `headline` | string | ✅ | "AI Agents Automate 75% of Workflows" | ✅ Title (h1) | Clear, factual, no clickbait (max 500 chars) |
+| `subtitle` | string | ❌ | "McKinsey study shows tech crossed the chasm" | ✅ Under title | Deck/kicker (1 sentence) |
+| `summary` | string | ❌ | "A 500-company study reveals..." | ✅ Body | Hook-first summary, 2-3 paragraphs |
+| `analysis` | string | ❌ | "The data shows 40% cost reduction..." | ✅ "Analysis" section | Business analysis |
+| `whyItMatters` | string | ❌ | "Start mapping which workflows can be automated" | ✅ "Why it matters" section | 1-2 sentences: what should a leader DO? |
+| `conclusion` | string | ❌ | "The technology is ready — the window is closing" | ✅ "Bottom line" section | Closing thought |
+| `keyTakeaways` | string[] | ❌ | `["40% cost reduction", "3x faster"]` | ✅ Numbered list box | 3-5 scannable bullets |
+| `pullQuotes` | string[] | ❌ | `["The bottleneck is trust, not tech"]` | ✅ Blockquotes (red border) | 1-3 notable quotes to highlight |
+| `author` | string | ❌ | "Enterprise AI Scout" | ✅ Byline | Journalist/agent name |
+| `readingTimeMinutes` | int | ❌ | `5` | ✅ "5 min read" | Estimated read time |
+| `isFeatured` | boolean | ❌ | `true` | ✅ ★ badge | Homepage hero placement |
+| `ctaLabel` | string | ❌ | "Explore use cases" | ✅ CTA button | CTA button text |
+| `ctaUrl` | string (URL) | ❌ | "https://agenticvaluehub.com/use-cases" | ✅ CTA link | CTA button link |
+| `imageUrl` | string (URL) | ❌ | "https://agenticvaluehub.com/uploads/uuid.jpg" | ✅ Hero image | Article image |
+| `sourceName` | string | ❌ | "TechCrunch" | ✅ Byline | Original publisher |
+| `sourceUrl` | string (URL) | ❌ | "https://techcrunch.com/..." | ✅ "Source:" link | Original article URL |
+| `publishedAt` | ISO 8601 | ❌ | "2026-09-20T10:00:00Z" | ✅ Date in byline | Original publication date |
+| `categories` | string[] | ❌ | `["Agentic AI", "Enterprise AI"]` | ✅ Category badges | Category tags |
+| `tags` | string[] | ❌ | `["agents", "automation"]` | ✅ #tag badges | Free-form tags |
+| `companies` | string[] | ❌ | `["OpenAI", "McKinsey"]` | ✅ Byline | Companies mentioned |
+| `industries` | string[] | ❌ | `["Finance", "Healthcare"]` | ✅ Tags | Industry tags |
+| `businessFunctions` | string[] | ❌ | `["IT Operations"]` | ✅ Tags | Business function tags |
+| `technologies` | string[] | ❌ | `["AI Agents", "RPA"]` | ✅ Tags | Technology tags |
+| `slug` | string | ❌ | "ai-agents-automate-75-percent" | ✅ URL | Auto from headline |
+| `status` | enum | ❌ | `PUBLISHED` | ❌ (controls visibility) | PUBLISHED, DRAFT, ARCHIVED |
+| `createdAt` | timestamp | auto | — | ❌ | Auto timestamp |
+| `updatedAt` | timestamp | auto | — | ❌ | Auto timestamp |
 
 ### Auto-Generated (do not send)
 
@@ -85,10 +73,9 @@ All fields an article can have. Only `headline` is required.
 |-------|-------------|
 | `id` | UUID auto-generated |
 | `slug` | From headline (auto if not provided) |
-| `canonicalUrl` | Normalized from source_url |
-| `contentHash` | SHA-256 of headline + summary + source_url |
+| `canonicalUrl` | Normalized from sourceUrl |
+| `contentHash` | SHA-256 of headline + summary + sourceUrl |
 | `ingestedAt` | Timestamp on creation |
-| `status` | Defaults to `PUBLISHED` |
 
 ### Snake_case Support
 
@@ -118,17 +105,17 @@ Content-Type: application/json
 }
 ```
 
-**Full-featured:**
+**Full:**
 ```json
 {
   "headline": "AI Agents Automate 75% of Enterprise Workflows",
   "subtitle": "McKinsey study shows the technology crossed the chasm",
-  "summary": "A comprehensive study of 500 enterprises reveals...",
-  "analysis": "The data shows 40% cost reduction in operations...",
-  "whyItMatters": "Start mapping which workflows are candidates for automation.",
+  "summary": "A comprehensive study of 500 Fortune 500 companies reveals...",
+  "analysis": "The data shows 40% cost reduction, 3x faster processing, 67% fewer errors.",
+  "whyItMatters": "If you haven't mapped which workflows are candidates, you're already behind.",
   "conclusion": "The technology is ready — the window for first-mover advantage is closing.",
   "keyTakeaways": [
-    "40% average cost reduction",
+    "40% average cost reduction across 500 enterprises",
     "3x faster processing times",
     "67% drop in error rates"
   ],
@@ -140,10 +127,10 @@ Content-Type: application/json
   "isFeatured": true,
   "ctaLabel": "Explore automation use cases",
   "ctaUrl": "https://agenticvaluehub.com/use-cases",
-  "image_url": "https://agenticvaluehub.com/uploads/uuid.jpg",
-  "source_name": "McKinsey Digital",
-  "source_url": "https://example.com/article",
-  "published_at": "2026-09-20T10:00:00Z",
+  "imageUrl": "https://agenticvaluehub.com/uploads/uuid.jpg",
+  "sourceName": "McKinsey Digital",
+  "sourceUrl": "https://example.com/article",
+  "publishedAt": "2026-09-20T10:00:00Z",
   "categories": ["Agentic AI", "Enterprise AI"],
   "tags": ["automation", "enterprise", "roi"],
   "companies": ["McKinsey"],
@@ -194,7 +181,7 @@ PATCH /api/v1/news/:id
 Authorization: Bearer <API_KEY>
 ```
 
-Send only the fields you want to change:
+Send only fields to change:
 ```json
 {
   "headline": "Updated headline",
@@ -242,19 +229,17 @@ curl -X POST $BASE/api/v1/upload \
 }
 ```
 
-Then use the returned URL as `image_url` when creating or updating an article.
+Then use the returned URL as `imageUrl` when creating or updating an article.
 
 ---
 
 ## AI Agent Workflow
 
-For AI journalist pipelines, follow this sequence:
-
 ```
 1. Generate article content (headline, summary, analysis, etc.)
 2. (Optional) Generate or download image
 3. Upload image → get URL
-4. POST /api/v1/news with all fields + image_url
+4. POST /api/v1/news with all fields + imageUrl
 5. If 409 (duplicate) → skip, article already exists
 6. If 201 → success, article is live
 ```
@@ -311,11 +296,26 @@ If you get a 409, the article already exists. Do not retry — move to the next 
 
 ### Status Management
 
-| Status | When to use |
-|--------|-------------|
-| `PUBLISHED` | Default — visible on website |
-| `DRAFT` | Not ready for public view |
-| `ARCHIVED` | Old/outdated, hidden from listings |
+| Status | When to use | Visible on website? |
+|--------|-------------|:-------------------:|
+| `PUBLISHED` | Default — visible on website | ✅ Yes |
+| `DRAFT` | Not ready for public view | ❌ No |
+| `ARCHIVED` | Old/outdated, hidden from listings | ❌ No |
+
+---
+
+## Endpoints Summary
+
+| Method | Path | Auth | Description |
+|--------|------|:----:|-------------|
+| POST | `/api/v1/news` | ✅ | Create article |
+| GET | `/api/v1/news` | ❌ | List articles |
+| GET | `/api/v1/news/:id` | ❌ | Get single article |
+| PATCH | `/api/v1/news/:id` | ✅ | Update article |
+| DELETE | `/api/v1/news/:id` | ✅ | Delete article |
+| POST | `/api/v1/upload` | ✅ | Upload image |
+| GET | `/uploads/:filename` | ❌ | Serve uploaded image |
+| GET | `/api/health` | ❌ | Health check |
 
 ---
 
@@ -336,17 +336,39 @@ PGPASSWORD=avh_prod_2026 psql -h 192.168.0.111 -U avh -d avh -c "DELETE FROM new
 PGPASSWORD=avh_prod_2026 psql -h 192.168.0.111 -U avh -d avh -c "SELECT id, headline, status FROM news ORDER BY \"publishedAt\" DESC LIMIT 10;"
 ```
 
----
+### Table: `news` — All Columns
 
-## Endpoints Summary
-
-| Method | Path | Auth | Description |
-|--------|------|:----:|-------------|
-| POST | `/api/v1/news` | ✅ | Create article |
-| GET | `/api/v1/news` | ❌ | List articles |
-| GET | `/api/v1/news/:id` | ❌ | Get single article |
-| PATCH | `/api/v1/news/:id` | ✅ | Update article |
-| DELETE | `/api/v1/news/:id` | ✅ | Delete article |
-| POST | `/api/v1/upload` | ✅ | Upload image |
-| GET | `/uploads/:filename` | ❌ | Serve uploaded image |
-| GET | `/api/health` | ❌ | Health check |
+| Column | Type | Nullable | Default | Public? |
+|--------|------|----------|---------|:-------:|
+| `id` | text | NOT NULL | UUID | ✅ |
+| `slug` | text | NOT NULL | — | ✅ |
+| `headline` | text | NOT NULL | — | ✅ |
+| `subtitle` | text | — | — | ✅ |
+| `summary` | text | — | — | ✅ |
+| `analysis` | text | — | — | ✅ |
+| `whyItMatters` | text | — | — | ✅ |
+| `conclusion` | text | — | — | ✅ |
+| `keyTakeaways` | text[] | — | — | ✅ |
+| `pullQuotes` | text[] | — | — | ✅ |
+| `author` | text | — | — | ✅ |
+| `readingTimeMinutes` | integer | — | — | ✅ |
+| `imageUrl` | text | — | — | ✅ |
+| `ctaLabel` | text | — | — | ✅ |
+| `ctaUrl` | text | — | — | ✅ |
+| `isFeatured` | boolean | NOT NULL | false | ✅ |
+| `sourceName` | text | — | — | ✅ |
+| `sourceUrl` | text | — | — | ✅ |
+| `canonicalUrl` | text | — | — | ✅ |
+| `publishedAt` | timestamp | — | — | ✅ |
+| `ingestedAt` | timestamp | NOT NULL | now() | ✅ |
+| `categories` | text[] | — | — | ✅ |
+| `tags` | text[] | — | — | ✅ |
+| `companies` | text[] | — | — | ✅ |
+| `industries` | text[] | — | — | ✅ |
+| `businessFunctions` | text[] | — | — | ✅ |
+| `technologies` | text[] | — | — | ✅ |
+| `contentHash` | text | UNIQUE | — | ✅ |
+| `status` | NewsStatus | NOT NULL | PUBLISHED | ✅ (controls visibility) |
+| `customerId` | text | — | — | ✅ |
+| `createdAt` | timestamp | NOT NULL | now() | ✅ |
+| `updatedAt` | timestamp | NOT NULL | — | ✅ |
