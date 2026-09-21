@@ -161,10 +161,16 @@ model UseCase {
   automationPotential Float?
   endToEndAutomationSuccess Float?
   agenticPercentage Float?
+  techStack          String[]
+  boatCapabilities   String[]
   complexity         String?
   risks              String?
   controls           String?
   sourceRefs         Json?
+  submitterName      String?
+  submitterCompany   String?
+  submitterDepartment String?
+  submitterEmail     String?
   status             UseCaseStatus  @default(DRAFT)
   customerId         String?
   createdAt          DateTime       @default(now())

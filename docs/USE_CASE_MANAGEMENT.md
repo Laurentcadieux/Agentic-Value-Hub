@@ -83,14 +83,44 @@ Only `title` is required. All other fields are optional.
 |-------|------|:--------:|---------|-------------|
 | `industry` | string | ❌ | "Finance" | Industry vertical |
 | `businessFunction` | string | ❌ | "Accounts Payable" | Business function |
-| `technologies` | string[] | ❌ | `["AI Agents", "OCR", "RPA"]` | Technologies used |
+| `technologies` | string[] | ❌ | `["AI Agents", "OCR", "RPA"]` | Technologies used (AI/automation types) |
+| `techStack` | string[] | ❌ | `["UiPath", "Pega", "Power Automate"]` | Specific tools/platforms used |
 | `valueDrivers` | string[] | ❌ | `["Cost reduction", "Accuracy"]` | Value drivers |
 | `agentPattern` | string | ❌ | "Multi-agent orchestration" | AI agent pattern |
 | `automationPattern` | string | ❌ | "Straight-through processing" | Automation pattern |
 | `automationPotential` | float | ❌ | `85` | 0-100 score |
+| `endToEndAutomationSuccess` | float | ❌ | `78` | End-to-end automation success rate (0-100) |
+| `agenticPercentage` | float | ❌ | `65` | How much AI handles unstructured data (0-100) |
+| `boatCapabilities` | string[] | ❌ | `["Agentic Automation", "Business Process Orchestration"]` | Gartner BOAT capabilities this use case maps to |
 | `complexity` | string | ❌ | "Medium" | Implementation complexity |
 
-### Sensitive (authenticated only)
+### Gartner BOAT Capabilities
+
+Valid values for `boatCapabilities`:
+
+| Capability | Description |
+|-----------|-------------|
+| Business Process Orchestration | Coordinating multi-step processes across systems, teams, and time |
+| Enterprise Connectivity | Integrating with core systems (ERP, CRM, legacy) |
+| Low-Code Development | Enabling business and IT to build workflows without full custom dev |
+| Agentic Automation | Orchestrating AI agents alongside deterministic automation |
+| Case Management | Managing unstructured work with context and audit trails |
+| Robotic Process Automation | Automating repetitive tasks by mimicking user actions |
+| Intelligent Document Processing | Extracting data from unstructured/semi-structured documents |
+| Collaborative Workflow Management | Managing collaborative human workflows |
+| Document Management | Managing document lifecycle and content |
+| Platform Governance and Operations | Governing and operating the automation platform |
+
+### Submitter Info (self-service — sensitive, hidden from public)
+
+| Field | Type | Public | Example | Description |
+|-------|------|:------:|---------|-------------|
+| `submitterName` | string | ❌ Hidden | "Jane Smith" | Name of person who submitted |
+| `submitterCompany` | string | ❌ Hidden | "Acme Corp" | Company of submitter |
+| `submitterDepartment` | string | ❌ Hidden | "IT Operations" | Department of submitter |
+| `submitterEmail` | string | ❌ Hidden | "jane@acme.com" | Contact email for follow-up |
+
+### Sensitive (authenticated only — hidden from public)
 
 | Field | Type | Public | Description |
 |-------|------|:------:|-------------|
@@ -99,6 +129,10 @@ Only `title` is required. All other fields are optional.
 | `systems` | string[] | ❌ Hidden | Systems involved |
 | `sourceRefs` | JSON | ❌ Hidden | Source references |
 | `customerId` | string | ❌ Hidden | Owning customer |
+| `submitterName` | string | ❌ Hidden | Who submitted this use case |
+| `submitterCompany` | string | ❌ Hidden | Submitter's company |
+| `submitterDepartment` | string | ❌ Hidden | Submitter's department |
+| `submitterEmail` | string | ❌ Hidden | Submitter's contact email |
 
 ### Auto-Generated
 
