@@ -85,6 +85,12 @@ export interface UseCaseWriteInput {
   risks?: string | null
   controls?: string | null
   sourceRefs?: Prisma.JsonValue | null
+  techStack?: string[]
+  boatCapabilities?: string[]
+  submitterName?: string | null
+  submitterCompany?: string | null
+  submitterDepartment?: string | null
+  submitterEmail?: string | null
   status?: UseCaseStatus
 }
 
@@ -357,6 +363,12 @@ export const useCaseRepository = {
         complexity: data.complexity,
         risks: data.risks,
         controls: data.controls,
+        techStack: data.techStack ?? [],
+        boatCapabilities: data.boatCapabilities ?? [],
+        submitterName: data.submitterName,
+        submitterCompany: data.submitterCompany,
+        submitterDepartment: data.submitterDepartment,
+        submitterEmail: data.submitterEmail,
         status: data.status ?? UseCaseStatus.DRAFT,
         ...(sourceRefs !== undefined ? { sourceRefs } : {}),
       },
@@ -395,6 +407,12 @@ export const useCaseRepository = {
         complexity: data.complexity,
         risks: data.risks,
         controls: data.controls,
+        techStack: data.techStack,
+        boatCapabilities: data.boatCapabilities,
+        submitterName: data.submitterName,
+        submitterCompany: data.submitterCompany,
+        submitterDepartment: data.submitterDepartment,
+        submitterEmail: data.submitterEmail,
         status: data.status,
         ...(sourceRefs !== undefined ? { sourceRefs } : {}),
       },

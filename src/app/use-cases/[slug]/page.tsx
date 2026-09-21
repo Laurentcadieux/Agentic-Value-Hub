@@ -87,6 +87,38 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   )
 }
 
+/**
+ * Brief description for a Gartner BOAT (Business Orchestration and Automation
+ * Technologies) capability. Falls back to a generic line for unknown entries
+ * so newly added capabilities still render with useful context.
+ */
+const BOAT_DESCRIPTIONS: Record<string, string> = {
+  'Agentic Automation':
+    'AI agents that plan, decide, and act autonomously across tools and systems.',
+  'Business Process Orchestration':
+    'Coordinates end-to-end processes across people, systems, and automations.',
+  'Workflow Automation':
+    'Rule-based orchestration of structured, multi-step tasks.',
+  'RPA': 'Software bots that mimic human actions in UI-driven systems.',
+  'Integration Orchestration':
+    'Connects APIs and systems so data and actions flow across the stack.',
+  'Process Mining':
+    'Analyzes event logs to discover, monitor, and improve processes.',
+  'Task Mining':
+    'Captures desktop activity to surface and automate repetitive tasks.',
+  'Decision Intelligence':
+    'Applies analytics and rules to support or automate business decisions.',
+  'Low-Code Automation':
+    'Visual builders that let business users compose automations quickly.',
+}
+
+function boatDescription(capability: string): string {
+  return (
+    BOAT_DESCRIPTIONS[capability] ??
+    `A Gartner BOAT capability referenced by this use case (${capability}).`
+  )
+}
+
 export default async function UseCaseDetailPage({ params }: Params) {
   const { slug } = await params
 
@@ -286,6 +318,54 @@ export default async function UseCaseDetailPage({ params }: Params) {
           <section className="mt-8 prose-editorial">
             <h2 className="font-headline text-xl font-bold">Bottom line</h2>
             <p className="whitespace-pre-line">{useCase.conclusion}</p>
+          </section>
+        ) : null}
+
+        {/* Tech stack */}
+        {useCase.techStack.length > 0 ? (
+          <section className="mt-10">
+            <h2 className="font-headline text-xl font-bold">Tech stack</h2>
+            <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
+              Tools and platforms used to deliver this use case.
+            </p>
+            <ul className="mt-4 flex flex-wrap gap-2">
+              {useCase.techStack.map((tech) => (
+                <li
+                  key={tech}
+                  className="rounded-lg bg-indigo-50 px-3 py-1.5 text-sm font-medium text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300"
+                >
+                  {tech}
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
+
+        {/* BOAT capabilities */}
+        {useCase.boatCapabilities.length > 0 ? (
+          <section className="mt-10">
+            <h2 className="font-headline text-xl font-bold">
+              Gartner BOAT capabilities
+            </h2>
+            <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
+              Business Orchestration and Automation Technologies demonstrated by
+              this use case.
+            </p>
+            <dl className="mt-4 space-y-3">
+              {useCase.boatCapabilities.map((cap) => (
+                <div
+                  key={cap}
+                  className="rounded-lg border border-sky-200 bg-sky-50/50 p-3 dark:border-sky-900 dark:bg-sky-900/20"
+                >
+                  <dt className="font-sans text-sm font-bold text-sky-800 dark:text-sky-300">
+                    BOAT: {cap}
+                  </dt>
+                  <dd className="mt-1 text-sm text-neutral-700 dark:text-neutral-300">
+                    {boatDescription(cap)}
+                  </dd>
+                </div>
+              ))}
+            </dl>
           </section>
         ) : null}
 

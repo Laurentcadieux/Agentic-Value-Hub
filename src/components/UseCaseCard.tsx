@@ -18,6 +18,8 @@ export interface UseCaseCardData {
   endToEndAutomationSuccess?: number | null
   agenticPercentage?: number | null
   technologies?: string[] | null
+  techStack?: string[] | null
+  boatCapabilities?: string[] | null
   valueDrivers?: string[] | null
   systems?: string[] | null
   complexity?: string | null
@@ -45,6 +47,8 @@ export function UseCaseCard({
   const href = `/use-cases/${useCase.slug}`
   const potential = useCase.automationPotential ?? 0
   const technologies = useCase.technologies ?? []
+  const techStack = useCase.techStack ?? []
+  const boatCapabilities = useCase.boatCapabilities ?? []
 
   if (variant === 'compact') {
     return (
@@ -213,6 +217,34 @@ export function UseCaseCard({
                 className="rounded bg-neutral-100 px-2 py-0.5 font-sans text-xs text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400"
               >
                 {tech}
+              </span>
+            ))}
+          </div>
+        )}
+
+        {/* Tech stack */}
+        {techStack.length > 0 && (
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {techStack.slice(0, 4).map((tech) => (
+              <span
+                key={tech}
+                className="rounded bg-indigo-50 px-2 py-0.5 font-sans text-xs font-medium text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300"
+              >
+                {tech}
+              </span>
+            ))}
+          </div>
+        )}
+
+        {/* BOAT capabilities */}
+        {boatCapabilities.length > 0 && (
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {boatCapabilities.slice(0, 4).map((cap) => (
+              <span
+                key={cap}
+                className="rounded bg-sky-50 px-2 py-0.5 font-sans text-xs font-semibold text-sky-700 dark:bg-sky-900/30 dark:text-sky-300"
+              >
+                BOAT: {cap}
               </span>
             ))}
           </div>

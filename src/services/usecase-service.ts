@@ -74,20 +74,34 @@ function toDTO(uc: UseCase): UseCaseDTO {
  */
 export type PublicUseCaseDTO = Omit<
   UseCaseDTO,
-  'risks' | 'controls' | 'systems' | 'sourceRefs' | 'customerId' | 'newsUseCases'
+  | 'risks'
+  | 'controls'
+  | 'systems'
+  | 'sourceRefs'
+  | 'customerId'
+  | 'submitterName'
+  | 'submitterCompany'
+  | 'submitterDepartment'
+  | 'submitterEmail'
+  | 'newsUseCases'
 >
 
 export function toPublicDTO<T extends { automationPotential: number | null }>(
   useCase: T,
 ): PublicUseCaseDTO {
-  // `risks`, `controls`, `systems`, `sourceRefs`, `customerId` and any
-  // `newsUseCases` relation are stripped; everything else is public.
+  // `risks`, `controls`, `systems`, `sourceRefs`, `customerId`, the four
+  // `submitter*` fields, and any `newsUseCases` relation are stripped;
+  // everything else (including `techStack` and `boatCapabilities`) is public.
   const {
     risks: _risks,
     controls: _controls,
     systems: _systems,
     sourceRefs: _sourceRefs,
     customerId: _customerId,
+    submitterName: _submitterName,
+    submitterCompany: _submitterCompany,
+    submitterDepartment: _submitterDepartment,
+    submitterEmail: _submitterEmail,
     newsUseCases: _newsUseCases,
     ...rest
   } = useCase as unknown as UseCase & { newsUseCases?: unknown }

@@ -107,6 +107,12 @@ const writeSchema = z.object({
   complexity: z.string().max(60).nullable().optional(),
   risks: z.string().nullable().optional(),
   controls: z.string().nullable().optional(),
+  techStack: z.array(z.string()).optional(),
+  boatCapabilities: z.array(z.string()).optional(),
+  submitterName: z.string().optional(),
+  submitterCompany: z.string().optional(),
+  submitterDepartment: z.string().optional(),
+  submitterEmail: z.string().optional(),
   status: z.nativeEnum(UseCaseStatus).optional(),
 })
 
